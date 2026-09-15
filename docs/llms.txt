@@ -1,0 +1,54 @@
+# llms.txt — remote-agent-kit index for humans and coding agents
+
+> remote-agent-kit: Terraform + Ansible + Makefile kit that provisions a
+> hardened Hetzner VPS (CPX21 x86, Ubuntu 24.04), joins it to Tailscale, and
+> configures Hermes Agent (Telegram gateway, Perch phone-client API, Agent of
+> Empires multi-agent coding, backups). MIT licensed. No servers are built
+> here; this repo configures YOUR server. Secrets live in `.env` only.
+
+## Start here
+
+- README.md — architecture diagram, quickstart (`make init/plan/apply/deploy/pair/doctor`), layout, safety
+- docs/prereqs.md — the 7 things to gather first (tokens, keys, bot, model)
+- docs/ops-runbook.md — daily commands, updates, failure-mode table, teardown
+- docs/alternatives.md — exe.dev / box.ascii.dev / Vercel Eve evaluation + when to use each
+- docs/costs.md — price table (~$30/mo total) + why x86, why disk-not-RAM
+- docs/privacy-considerations.md — threat model: keys are shells, QR is a credential
+- docs/telegram-setup.md — BotFather + allow-list walkthrough (5 min)
+- docs/tailscale-perch.md — tailnet access, pairing, lockout recovery
+
+## Operate
+
+- Makefile — every command (`make help`); deploy reads `.env`, never commits it
+- .env.example — all secrets with CHANGEME placeholders; copy to `.env`, chmod 600
+- scripts/doctor.sh — 7-point live health check (read-only)
+- scripts/backup.sh — pull newest server tarball over Tailscale
+- scripts/pair.sh — pairing instructions (QR itself comes from Perch's pair.sh on the server)
+- scripts/repo_check.sh — secret scan + bash/YAML syntax + terraform fmt (also CI)
+
+## Provision (Terraform — Hetzner only)
+
+- terraform/versions.tf, providers.tf — hcloud ~> 1.49, token from var/env
+- terraform/variables.tf — server_type default cpx21 (x86 ONLY, never cax ARM: gateway crash-loops)
+- terraform/server.tf — edge-closed firewall (SSH-from-your-IP, ICMP; no 80/443), ssh key, server + cloud-init
+- terraform/cloud-init.yaml.tftpl — first-boot only: non-root user, key-only SSH, base packages
+- terraform/outputs.tf — public IPv4 (bootstrap), ids, tailscale hint
+- terraform/terraform.tfvars.example — copy to terraform.tfvars (gitignored)
+
+## Configure (Ansible — works on ANY Ubuntu 24.04 x86 box, not just Hetzner)
+
+- ansible/playbook.yml — 7 idempotent roles, feature-toggled in group_vars/all.yml
+- ansible/roles/common — apt, swap, key-only SSH, UFW deny-incoming, fail2ban, unattended-upgrades
+- ansible/roles/tailscale — up with auth key, verify tailnet SSH, THEN bind sshd to tailnet IP
+- ansible/roles/hermes — installer (~6.6 GB), API env 0600, keygen, UFW tailnet-only 8642, doctor
+- ansible/roles/telegram — polling bot, mandatory allow-list, non-interactive install workaround, linger, health wait
+- ansible/roles/perch — dashboard 9119 service (tailnet-only), pinned session token, ntfy hook plugin
+- ansible/roles/aoe — Docker + Agent of Empires from GitHub releases, `aoe agents` verify
+- ansible/roles/backups — nightly cron (hermes backup + tarball + optional age), retention, snapshot reminder
+
+## Rules (non-negotiable, enforced by repo_check.sh + CI)
+
+- Never commit `.env`, `terraform.tfvars`, `ansible/inventory/hosts.yml`, `*.tfstate`, age keys
+- Placeholders are `CHANGEME`; anything matching live-secret patterns fails CI
+- No `--privileged` / host-network containers; agents run sandboxed
+- Re-running `make deploy` must be a no-op (idempotency); cloud-init runs once, Ansible runs forever

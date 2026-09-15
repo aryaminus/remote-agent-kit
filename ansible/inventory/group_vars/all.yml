@@ -1,0 +1,32 @@
+# ── remote-agent-kit defaults. Override per host in hosts.yml, never commit secrets.
+# Secrets arrive as env vars at runtime (see .env.example):
+#   TAILSCALE_AUTHKEY, TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_USERS,
+#   OPENROUTER_API_KEY / ANTHROPIC_API_KEY, API_SERVER_KEY, NTFY_TOPIC.
+
+# Which roles run (toggle features here):
+enable_tailscale: true
+enable_hermes: true
+enable_telegram: true
+enable_perch_api: true
+enable_aoe: true
+enable_backups: true
+
+admin_username: hermes
+
+# Hermes versions — pin for reproducibility, bump deliberately.
+hermes_installer_url: https://hermes-agent.nousresearch.com/install.sh
+hermes_api_port: 8642
+hermes_dashboard_port: 9119
+# Model wiring on the server. `nous` = OAuth via `hermes setup --portal`
+# (no key stored). openrouter/anthropic need their key in .env.
+model_provider: nous
+
+# Tailscale
+tailscale_hostname: hermes
+tailscale_extra_args: ""   # e.g. "--advertise-tags=tag:server"
+
+# Backups
+backup_dir: /home/hermes/backups
+backup_retention_days: 14
+# age public key for encrypted backups. Empty = plain tarballs (still off-box via rsync).
+age_public_key: ""

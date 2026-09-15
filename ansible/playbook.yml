@@ -1,0 +1,13 @@
+# remote-agent-kit — full configuration. Every role is idempotent:
+# re-running `make deploy` is a no-op when nothing changed.
+- name: Configure the agent VPS
+  hosts: all
+  become: true
+  roles:
+    - { role: common, tags: common }
+    - { role: tailscale, tags: tailscale, when: enable_tailscale }
+    - { role: hermes, tags: hermes, when: enable_hermes }
+    - { role: telegram, tags: telegram, when: enable_telegram }
+    - { role: perch, tags: perch, when: enable_perch_api }
+    - { role: aoe, tags: aoe, when: enable_aoe }
+    - { role: backups, tags: backups, when: enable_backups }

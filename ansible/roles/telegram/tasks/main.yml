@@ -1,0 +1,59 @@
+# telegram — polling gateway. The bot dials OUT to Telegram, so no inbound
+# firewall ports are needed. The allow-list is mandatory: a token without
+# TELEGRAM_ALLOWED_USERS is a public agent.
+- name: Require bot token + allow-list
+  ansible.builtin.fail:
+    msg: "Set TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USERS in .env (BotFather + @userinfobot). See docs/telegram-setup.md."
+  when: lookup('env', 'TELEGRAM_BOT_TOKEN') | length == 0 or lookup('env', 'TELEGRAM_ALLOWED_USERS') | length == 0
+
+- name: Write Telegram env
+  ansible.builtin.lineinfile:
+    path: /home/{{ admin_username }}/.hermes/.env
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0600"
+  loop:
+    - { key: 'TELEGRAM_BOT_TOKEN', value: "{{ lookup('env', 'TELEGRAM_BOT_TOKEN') }}" }
+    - { key: 'TELEGRAM_ALLOWED_USERS', value: "{{ lookup('env', 'TELEGRAM_ALLOWED_USERS') }}" }
+  no_log: true
+
+- name: Configure the gateway platform (writes config, starts nothing)
+  ansible.builtin.command: /home/{{ admin_username }}/.hermes/bin/hermes gateway setup --platform telegram
+  become_user: "{{ admin_username }}"
+  become: true
+  register: gw_setup
+  changed_when: "'already' not in (gw_setup.stdout | lower)"
+  failed_when: false
+
+- name: Install the gateway as a user systemd service (non-interactive workaround)
+  # Upstream asks two [Y/n] prompts with no --yes flag; over SSH stdin it
+  # aborts and installs nothing. n = don't start now, Y = enable on boot.
+  ansible.builtin.shell:
+    cmd: printf 'n\nY\n' | /home/{{ admin_username }}/.hermes/bin/hermes gateway install
+    creates: /home/{{ admin_username }}/.config/systemd/user/hermes-gateway.service
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Enable lingering so the gateway survives reboot without login
+  ansible.builtin.command: loginctl enable-linger {{ admin_username }}
+  changed_when: false
+
+- name: Start the gateway
+  ansible.builtin.systemd:
+    name: hermes-gateway
+    scope: user
+    enabled: true
+    state: started
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Wait for the gateway API to answer locally
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ hermes_api_port }}/health"
+    status_code: 200
+  register: health
+  retries: 12
+  delay: 10
+  until: health.status == 200

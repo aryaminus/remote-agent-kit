@@ -1,0 +1,32 @@
+# backups — snapshots reminder + nightly local tarballs (+ optional age
+# encryption) + retention. Off-box copy is `make backup` (rsync over Tailscale).
+- name: Backup directory
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0700"
+
+- name: Install age when encryption is requested
+  ansible.builtin.apt:
+    name: age
+    state: present
+  when: age_public_key | length > 0
+
+- name: Nightly backup cron (hermes backup + data tarball, retention enforced)
+  ansible.builtin.cron:
+    name: "hermes nightly backup"
+    user: "{{ admin_username }}"
+    hour: "3"
+    minute: "0"
+    job: >-
+      /home/{{ admin_username }}/.hermes/bin/hermes backup >/dev/null 2>&1;
+      f={{ backup_dir }}/agent-$(date +\%F).tar.gz;
+      tar -czf "$f" -C /home/{{ admin_username }}/.hermes . >/dev/null 2>&1
+      {% if age_public_key | length > 0 %}&& age -r {{ age_public_key }} -o "$f.age" "$f" && rm "$f"{% endif %};
+      find {{ backup_dir }} -name 'agent-*.tar.gz*' -mtime +{{ backup_retention_days }} -delete
+
+- name: Snapshot reminder
+  ansible.builtin.debug:
+    msg: "Enable a daily Hetzner snapshot in the console (~€0.50/mo for 40 GB) and tag one 'before-update' before upgrades. See docs/ops-runbook.md."

@@ -1,0 +1,96 @@
+# hermes — install the agent + API server env (no secrets in git).
+# Model wiring: `nous` = OAuth via `hermes setup --portal` (run once over SSH,
+# approve in browser, no key stored). openrouter/anthropic keys come from .env
+# and are written to the gateway env on the SERVER only (mode 0600).
+- name: Check free disk (>= 15 GB — the install is ~6.6 GB)
+  ansible.builtin.assert:
+    that: ansible_mounts | selectattr('mount', 'equalto', '/') | map(attribute='size_available') | first > 15000000000
+    fail_msg: "Need ~15 GB free on / for the Hermes install (browser engine + node + python)."
+
+- name: Download the Hermes installer
+  ansible.builtin.get_url:
+    url: "{{ hermes_installer_url }}"
+    dest: /tmp/hermes-install.sh
+    mode: "0755"
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Run the installer (skips interactive wizard on servers)
+  ansible.builtin.command:
+    cmd: bash /tmp/hermes-install.sh --skip-setup
+    creates: /home/{{ admin_username }}/.hermes/bin/hermes
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Ensure gateway env file exists with safe permissions
+  ansible.builtin.file:
+    path: /home/{{ admin_username }}/.hermes/.env
+    state: touch
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0600"
+    modification_time: preserve
+    access_time: preserve
+
+- name: Generate API_SERVER_KEY when not provided
+  ansible.builtin.set_fact:
+    api_server_key: "{{ lookup('env', 'API_SERVER_KEY') | default('hp_' + lookup('password', '/dev/null length=43 chars=ascii_letters,digits'), true) }}"
+  no_log: true
+
+- name: Write gateway server env (API for Perch + model keys)
+  ansible.builtin.lineinfile:
+    path: /home/{{ admin_username }}/.hermes/.env
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    create: true
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0600"
+  loop:
+    - { key: 'API_SERVER_ENABLED', value: 'true' }
+    - { key: 'API_SERVER_KEY', value: "{{ api_server_key }}" }
+    - { key: 'API_SERVER_HOST', value: '0.0.0.0' }
+    - { key: 'API_SERVER_PORT', value: "{{ hermes_api_port }}" }
+  no_log: true
+
+- name: Write model provider key when supplied
+  ansible.builtin.lineinfile:
+    path: /home/{{ admin_username }}/.hermes/.env
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0600"
+  loop:
+    - { key: 'OPENROUTER_API_KEY', value: "{{ lookup('env', 'OPENROUTER_API_KEY') }}" }
+    - { key: 'ANTHROPIC_API_KEY', value: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}" }
+  when: item.value | length > 0
+  no_log: true
+
+- name: Write CORS origin for the Perch web build when supplied
+  ansible.builtin.lineinfile:
+    path: /home/{{ admin_username }}/.hermes/.env
+    regexp: '^API_SERVER_CORS_ORIGINS='
+    line: "API_SERVER_CORS_ORIGINS={{ lookup('env', 'PERCH_WEB_ORIGIN') }}"
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0600"
+  when: lookup('env', 'PERCH_WEB_ORIGIN') | length > 0
+
+- name: UFW — API answers on the tailnet only
+  community.general.ufw:
+    rule: allow
+    port: "{{ hermes_api_port }}"
+    proto: tcp
+    from_ip: 100.64.0.0/10
+
+- name: hermes doctor (fails the run if the install is broken)
+  ansible.builtin.command: /home/{{ admin_username }}/.hermes/bin/hermes doctor
+  become_user: "{{ admin_username }}"
+  become: true
+  register: doctor
+  changed_when: false
+
+- name: Remind where the API key lives
+  ansible.builtin.debug:
+    msg: "API_SERVER_KEY is set in ~/.hermes/.env on the server (0600). Fetch it over Tailscale for Perch pairing — it never appears in logs."

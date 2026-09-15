@@ -1,0 +1,29 @@
+#cloud-config
+# Minimal first-boot: non-root user, key-only SSH, upgrades. Everything else
+# (UFW, fail2ban, Tailscale, Hermes) is Ansible's job so it stays idempotent
+# and re-runnable — cloud-init runs once, Ansible runs forever.
+users:
+  - name: ${admin_username}
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+ssh_pwauth: false
+disable_root: true
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - curl
+  - git
+  - ufw
+  - fail2ban
+  - python3
+
+timezone: Etc/UTC
+
+runcmd:
+  - systemctl enable --now fail2ban

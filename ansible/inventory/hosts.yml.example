@@ -1,0 +1,9 @@
+# Copy to hosts.yml (gitignored) and set the IPv4 from `terraform output`.
+# After the tailscale role runs once, you can switch ansible_host to the
+# tailnet IP (100.x.y.z) so later runs never touch the public internet.
+all:
+  hosts:
+    hermes:
+      ansible_host: CHANGEME # e.g. 46.250.00.00, later 100.64.x.y
+      ansible_user: hermes
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519

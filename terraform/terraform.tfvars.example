@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars (gitignored) and fill in. NEVER commit the real file.
+#   cp terraform.tfvars.example terraform.tfvars && chmod 600 terraform.tfvars
+
+hcloud_token = "CHANGEME-hetzner-cloud-api-token" # or export HCLOUD_TOKEN instead
+server_name  = "hermes"
+server_type  = "cpx21"  # x86 only — never cax* (ARM). See docs/costs.md.
+image        = "ubuntu-24.04"
+location     = "fsn1"   # fsn1 | nbg1 | hel1 | ash | hil
+
+# Contents of ~/.ssh/id_ed25519.pub (generate: ssh-keygen -t ed25519)
+ssh_public_key = "ssh-ed25519 CHANGEME your@email"
+
+admin_username = "hermes"
+
+# Your current public IP so bootstrap SSH works (https://ifconfig.me).
+# Include /32, e.g. "1.2.3.4/32". Empty = no edge SSH (Hetzner console instead).
+my_ip = ""

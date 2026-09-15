@@ -1,0 +1,80 @@
+# perch — make the phone client work over the tailnet.
+# 1. Dashboard on 9119 (tailnet-only) as a user systemd service, with a PINNED
+#    session token (unpinned tokens regenerate every restart and silently unpair).
+# 2. perch-approvals hook plugin so approvals reach ntfy (P1.19 bridge).
+- name: Generate dashboard session token when not provided
+  ansible.builtin.set_fact:
+    dash_token: "{{ lookup('env', 'HERMES_DASHBOARD_SESSION_TOKEN') | default(lookup('password', '/dev/null length=43 chars=ascii_letters,digits'), true) }}"
+  no_log: true
+
+- name: Pin the dashboard session token
+  ansible.builtin.lineinfile:
+    path: /home/{{ admin_username }}/.hermes/.env
+    regexp: '^HERMES_DASHBOARD_SESSION_TOKEN='
+    line: "HERMES_DASHBOARD_SESSION_TOKEN={{ dash_token }}"
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0600"
+  no_log: true
+
+- name: Install dashboard service unit (tailnet bind via tailscale serve pattern)
+  ansible.builtin.copy:
+    dest: /home/{{ admin_username }}/.config/systemd/user/hermes-dashboard.service
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Hermes dashboard + remote backend (tailnet only)
+      After=network-online.target tailscaled.service hermes-gateway.service
+      Wants=network-online.target
+      [Service]
+      ExecStart=/home/{{ admin_username }}/.hermes/bin/hermes dashboard --host 0.0.0.0 --port {{ hermes_dashboard_port }} --no-open
+      Restart=on-failure
+      RestartSec=5
+      [Install]
+      WantedBy=default.target
+  notify: Reload user systemd
+
+- name: UFW — dashboard answers on the tailnet only
+  community.general.ufw:
+    rule: allow
+    port: "{{ hermes_dashboard_port }}"
+    proto: tcp
+    from_ip: 100.64.0.0/10
+
+- name: Enable and start the dashboard
+  ansible.builtin.systemd:
+    name: hermes-dashboard
+    scope: user
+    enabled: true
+    state: started
+    daemon_reload: true
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Install the perch-approvals ntfy hook plugin (approval push bridge)
+  ansible.builtin.copy:
+    dest: /home/{{ admin_username }}/.hermes/plugins/perch-approvals/
+    src: perch-approvals/
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0644"
+  when: lookup('env', 'NTFY_TOPIC') | length > 0
+
+- name: Point the hook at the ntfy topic
+  ansible.builtin.lineinfile:
+    path: /home/{{ admin_username }}/.hermes/.env
+    regexp: '^NTFY_TOPIC='
+    line: "NTFY_TOPIC={{ lookup('env', 'NTFY_TOPIC') }}"
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0600"
+  when: lookup('env', 'NTFY_TOPIC') | length > 0
+
+- name: Pairing instructions
+  ansible.builtin.debug:
+    msg: >-
+      On the server run: tailscale ip -4 → then from your laptop
+      `bash scripts/pair.sh --tailscale` (Perch repo) or scan the QR it prints.
+      The QR carries API_SERVER_KEY — trusted camera only.

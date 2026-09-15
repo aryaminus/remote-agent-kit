@@ -1,0 +1,82 @@
+# common — base hardening. Safe to re-run: all tasks are idempotent.
+- name: Update apt cache and upgrade
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: safe
+    cache_valid_time: 3600
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - git
+      - ufw
+      - fail2ban
+      - tmux
+      - unattended-upgrades
+      - python3
+      - qrencode
+    state: present
+
+- name: 2 GB swapfile for small boxes
+  ansible.builtin.command:
+    cmd: fallocate -l 2G /swapfile
+    creates: /swapfile
+
+- name: Swapfile permissions
+  ansible.builtin.file:
+    path: /swapfile
+    mode: "0600"
+    owner: root
+    group: root
+
+- name: Enable swap
+  ansible.builtin.command:
+    cmd: "{{ item }}"
+  loop:
+    - mkswap /swapfile
+    - swapon /swapfile
+  when: "'/swapfile' not in ansible_swaptotal_mb | string"
+  changed_when: true
+  failed_when: false
+
+- name: Persist swap in fstab
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    line: /swapfile none swap sw 0 0
+    create: true
+    mode: "0644"
+
+- name: Key-only SSH, no root login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+    - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+    - { regexp: '^#?ChallengeResponseAuthentication', line: 'ChallengeResponseAuthentication no' }
+  notify: Restart sshd
+
+- name: UFW default deny incoming, allow outgoing
+  community.general.ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: deny }
+    - { direction: outgoing, policy: allow }
+
+- name: UFW allow SSH (edge rule — tailscale role narrows sshd itself)
+  community.general.ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+
+- name: Enable unattended security upgrades
+  ansible.builtin.systemd:
+    name: unattended-upgrades
+    enabled: true
+    state: started

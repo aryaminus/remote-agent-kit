@@ -1,0 +1,28 @@
+# ── Secrets: never commit these ─────────────────────────────
+.env
+*.tfvars
+*.tfvars.json
+*.tfstate
+*.tfstate.*
+*.backup
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+ansible/inventory/hosts.yml
+*.age.key
+age-key.txt
+hetzner-token.txt
+tailscale-authkey.txt
+
+# ── OS / editor ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*~
+*.swp
+.vscode/
+.idea/
+
+# ── Tool caches ─────────────────────────────────────────────
+.ansible/
+ansible/collections/*
+!ansible/collections/requirements.yml
+*.retry

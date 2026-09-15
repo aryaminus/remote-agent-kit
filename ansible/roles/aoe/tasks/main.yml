@@ -1,0 +1,47 @@
+# aoe — Agent of Empires: one tmux session + optional Docker sandbox per
+# coding agent (Claude Code, Codex CLI, OpenCode, Pi). Idempotent: skips when
+# `aoe` is already on PATH. Verified agent list: `aoe agents` after install.
+- name: Install Docker (AoE sandbox backend)
+  ansible.builtin.apt:
+    name: docker.io
+    state: present
+
+- name: hermes user in the docker group
+  ansible.builtin.user:
+    name: "{{ admin_username }}"
+    groups: docker
+    append: true
+
+- name: Check whether aoe is installed
+  ansible.builtin.command: /usr/local/bin/aoe --version
+  register: aoe_check
+  changed_when: false
+  failed_when: false
+
+- name: Install AoE from the latest GitHub release
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      tag=$(curl -fsSL https://api.github.com/repos/agent-of-empires/agent-of-empires/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"])')
+      arch=$(uname -m | sed 's/x86_64/x86_64/;s/aarch64/arm64/')
+      tmp=$(mktemp -d)
+      curl -fsSL -o "$tmp/aoe.tar.gz" "https://github.com/agent-of-empires/agent-of-empires/releases/download/${tag}/aoe-${tag}-linux-${arch}.tar.gz" \
+        || curl -fsSL -o "$tmp/aoe" "https://github.com/agent-of-empires/agent-of-empires/releases/download/${tag}/aoe-linux-${arch}" \
+        || (echo "Could not fetch AoE ${tag} for linux-${arch}; install manually per https://github.com/agent-of-empires/agent-of-empires" && exit 1)
+      if [[ -f "$tmp/aoe.tar.gz" ]]; then tar -xzf "$tmp/aoe.tar.gz" -C "$tmp"; fi
+      install -m 0755 "$tmp/aoe"* /usr/local/bin/aoe
+      rm -rf "$tmp"
+    creates: /usr/local/bin/aoe
+  when: aoe_check.rc != 0
+
+- name: Verify AoE sees the installed CLIs
+  ansible.builtin.command: /usr/local/bin/aoe agents
+  become_user: "{{ admin_username }}"
+  become: true
+  register: aoe_agents
+  changed_when: false
+  failed_when: false
+
+- name: Show detected agents
+  ansible.builtin.debug:
+    msg: "{{ aoe_agents.stdout_lines | default(['(aoe agents output unavailable — run `aoe agents` over SSH)']) }}"
