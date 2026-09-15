@@ -13,7 +13,13 @@
 ## Weekly / monthly
 
 * `make backup` — pull the newest `~/backups/agent-*.tar.gz` off-box.
+* `make rollback FILE=backups/agent-<date>.tar.gz` — restore the server from a
+  tarball (snapshots current state first, always asks). The way back for every
+  change, per the Law of Unintended Consequences.
 * Hetzner console — confirm the daily snapshot ran; tag `before-update` first.
+* Budget review (Goodhart's warning: watch the spend, not the gates): Hetzner
+  console usage + model provider dashboard. Expected ~€7.55 + $5–20; investigate
+  drift before optimizing.
 * Updates: snapshot → `hermes backup` → `hermes update` → `hermes doctor` →
   `systemctl --user restart hermes-gateway hermes-dashboard`.
 * Rotate: Tailscale auth key (90d expiry reminds you), Telegram token on leak

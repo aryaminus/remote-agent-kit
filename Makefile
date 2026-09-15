@@ -14,7 +14,10 @@ help: ## show every command
 init: ## one-time: terraform init + ansible collections
 	$(TF) init
 	ansible-galaxy collection install -r ansible/collections/requirements.yml -p ./ansible/collections
-	@echo "Next: fill terraform/terraform.tfvars + ansible/inventory/hosts.yml + .env, then: make plan"
+	@echo "Next: fill terraform/terraform.tfvars + ansible/inventory/hosts.yml + .env, then: make preflight"
+
+preflight: ## Murphy's Law gate: fail free on your laptop before spending a cent
+	./scripts/preflight.sh
 
 plan: ## review what Terraform will create (no changes)
 	$(TF) plan
@@ -39,6 +42,9 @@ doctor: ## 7-point health check against the live box
 
 backup: ## snapshot reminder + pull a hermes-data tarball
 	./scripts/backup.sh
+
+rollback: ## restore ~/.hermes on the server from a local backup (asks first)
+	./scripts/rollback.sh $(FILE)
 
 logs: ## follow the gateway journal on the server
 	ssh hermes@$$(terraform -chdir=terraform output -raw server_ipv4 2>/dev/null) \

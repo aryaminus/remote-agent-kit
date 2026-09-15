@@ -21,6 +21,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# ── Local run history (Gilb's Law logs — yours, never shipped) ───
+logs/
+
 # ── Tool caches ─────────────────────────────────────────────
 .ansible/
 ansible/collections/*

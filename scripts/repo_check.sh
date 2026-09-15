@@ -50,7 +50,10 @@ try:
 except ImportError:
     print("  ! pyyaml missing — skipping YAML parse check"); sys.exit(0)
 bad = 0
-for f in glob.glob("ansible/**/*.yml", recursive=True) + glob.glob(".github/workflows/*.yml"):
+# Vendored collections are third-party — checked upstream, not here.
+mine = [f for f in glob.glob("ansible/**/*.yml", recursive=True)
+        if not f.startswith("ansible/collections/")]
+for f in mine + glob.glob(".github/workflows/*.yml"):
     try:
         list(yaml.safe_load_all(open(f)))
         print(f"  ✓ {f}")

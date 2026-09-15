@@ -14,6 +14,8 @@
 - docs/alternatives.md — exe.dev / box.ascii.dev / Vercel Eve evaluation + when to use each
 - docs/costs.md — price table (~$30/mo total) + why x86, why disk-not-RAM
 - docs/privacy-considerations.md — threat model: keys are shells, QR is a credential
+- docs/adr/0001-hetzner-tailscale.md — why hybrid over PaaS/plain VPS
+- docs/adr/0002-terraform-ansible.md — why this automation split (Gall's Law)
 - docs/telegram-setup.md — BotFather + allow-list walkthrough (5 min)
 - docs/tailscale-perch.md — tailnet access, pairing, lockout recovery
 
@@ -21,8 +23,10 @@
 
 - Makefile — every command (`make help`); deploy reads `.env`, never commits it
 - .env.example — all secrets with CHANGEME placeholders; copy to `.env`, chmod 600
-- scripts/doctor.sh — 7-point live health check (read-only)
+- scripts/preflight.sh — Murphy's gate: tools + filled secrets + SSH key, before money moves
+- scripts/doctor.sh — 7-point live health check (read-only); appends JSONL to logs/doctor.log
 - scripts/backup.sh — pull newest server tarball over Tailscale
+- scripts/rollback.sh — restore server from tarball (snapshots first, always asks)
 - scripts/pair.sh — pairing instructions (QR itself comes from Perch's pair.sh on the server)
 - scripts/repo_check.sh — secret scan + bash/YAML syntax + terraform fmt (also CI)
 

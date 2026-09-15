@@ -50,11 +50,12 @@ cp .env.example .env
 # Edit the three files above — secrets live ONLY there, never committed.
 
 make init      # terraform init + ansible-galaxy install
+make preflight # fail free on your laptop before spending a cent
 make plan      # review what will be created
 make apply     # provision the VPS (~60s)
 make deploy    # configure everything (~10 min)
 make pair      # QR to scan with Perch / address for Telegram test
-make doctor    # 7-point health check
+make doctor    # 7-point health check (logged to logs/doctor.log)
 ```
 
 Day to day: `make ssh`, `make logs`, `make backup`. Full lifecycle in
@@ -73,6 +74,17 @@ scripts/                    glue: doctor, backup, pair helper, repo_check
 docs/                       prereqs, telegram, tailscale+perch, runbook, costs
 .github/workflows/          CI: terraform validate + secret scan
 ```
+
+## Non-goals (YAGNI — deliberately out of scope)
+
+* No multi-region / HA / autoscaling. One box, snapshots, backups. The failure
+  domain is small on purpose; scale when Gilb's numbers say so, not before.
+* No public reverse proxy / 80-443 rules shipped. Add them only per
+  `docs/privacy-considerations.md`.
+* No ARM support (gateway crash-loops under systemd there — documented, not fixed here).
+* No secrets management service — `.env` 0600 + `.gitignore` + CI scan is the
+  whole system at this scale (Tesler's complexity has to live somewhere; here
+  it lives in operator discipline, written down in `docs/prereqs.md`).
 
 ## Safety
 
