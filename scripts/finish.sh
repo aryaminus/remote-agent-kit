@@ -21,6 +21,19 @@ confirm() {
 }
 
 [[ -x "$BIN" ]] || { echo "Hermes not installed yet — cloud-init still working? Wait for CPU to idle, then re-run."; exit 1; }
+
+# User-bus bootstrap: systemctl --user needs a logind session (XDG_RUNTIME_DIR
+# + a running user@UID manager). Direct SSH logins get one; sudo/tmux/screen
+# launches do NOT — "Failed to connect to bus: No medium found". Linger makes
+# the user manager always-on (also what survives reboots), and exporting the
+# dir makes the bus reachable from any context.
+sudo loginctl enable-linger "$USER" 2>/dev/null || true
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+systemctl --user is-system-running >/dev/null 2>&1 || {
+  echo "user services not up yet — waiting…"; sleep 5
+  systemctl --user is-system-running >/dev/null 2>&1 || { echo "still down; re-run finish.sh from a direct 'ssh hermes@<ip>' login."; exit 1; }
+}
+
 touch "$ENV"; chmod 600 "$ENV"
 putenv() { # putenv KEY VALUE (no spaces around =)
   grep -v -E "^$1=" "$ENV" > "$ENV.tmp" || true; mv "$ENV.tmp" "$ENV"
