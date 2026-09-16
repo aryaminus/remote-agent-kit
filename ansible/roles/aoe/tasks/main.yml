@@ -64,6 +64,18 @@
     - { cmd: 'export PATH="$HOME/.local/bin:$PATH"; curl -fsSL https://opencode.ai/install | bash', creates: '/home/{{ admin_username }}/.opencode/bin/opencode' }
   when: install_agent_clis | default(true)
 
+- name: Symlink opencode where AoE's PATH sees it
+  # opencode's installer targets ~/.opencode/bin (+bashrc line). AoE detects
+  # via standard PATH, so link it into ~/.local/bin — works for login shells
+  # AND the aoe TUI alike. Verified live: binary 1.18.31, AoE then detects it.
+  ansible.builtin.file:
+    src: "/home/{{ admin_username }}/.opencode/bin/opencode"
+    dest: "/home/{{ admin_username }}/.local/bin/opencode"
+    state: link
+  become_user: "{{ admin_username }}"
+  become: true
+  when: install_agent_clis | default(true)
+
 - name: Verify AoE sees the installed CLIs
   ansible.builtin.command: /usr/local/bin/aoe agents
   become_user: "{{ admin_username }}"
