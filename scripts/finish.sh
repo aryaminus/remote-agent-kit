@@ -31,7 +31,7 @@ sudo loginctl enable-linger "$USER" 2>/dev/null || true
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 systemctl --user is-system-running >/dev/null 2>&1 || {
   echo "user services not up yet — waiting…"; sleep 5
-  systemctl --user is-system-running >/dev/null 2>&1 || { echo "still down; re-run finish.sh from a direct 'ssh hermes@<ip>' login."; exit 1; }
+  systemctl --user is-system-running >/dev/null 2>&1 || { echo "still down; re-run finish.sh from a direct ssh login."; exit 1; }
 }
 
 touch "$ENV"; chmod 600 "$ENV"

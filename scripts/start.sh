@@ -185,11 +185,11 @@ set_var "$TFV" server_type "$sc"
 LOC="$(cur_val "$TFV" location)"; [[ -n "$LOC" ]] || LOC=fsn1
 printf 'Region: fsn1/nbg1/hel1 (EU) or ash/hil (US) [%s]: ' "$LOC"
 IFS= read -r lc || lc=""; [[ -z "$lc" ]] && lc="$LOC"; set_var "$TFV" location "$lc"
-SNAME="$(cur_val "$TFV" server_name)"; [[ -n "$SNAME" ]] || SNAME=hermes
+SNAME="$(cur_val "$TFV" server_name)"; [[ -n "$SNAME" ]] || SNAME=agentbox
 printf 'Server name [%s]: ' "$SNAME"; IFS= read -r sn || sn=""; [[ -z "$sn" ]] && sn="$SNAME"; set_var "$TFV" server_name "$sn"
 set_var "$TFV" hcloud_token "$HCLOUD_TOKEN" # real token here (file is 600 + gitignored); provider has no env fallback when the var is set
 set_var "$TFV" ssh_public_key "$(cat "$PUBKEY_FILE")"
-set_var "$TFV" admin_username "hermes"
+set_var "$TFV" admin_username "agentbox"
 MYIP="$(curl -s -m 8 https://ifconfig.me 2>/dev/null || true)"
 if [[ -n "$MYIP" ]]; then
   printf 'Your public IP is %s — allow bootstrap SSH from it? [Y/n]: ' "$MYIP"
@@ -234,12 +234,14 @@ s = io.open(p, encoding='utf-8').read()
 s = s.replace('CHANGEME # e.g. 46.250.00.00, later 100.64.x.y', ip)
 io.open(p, 'w', encoding='utf-8').write(s)
 PYEOF
+TF_USER="$(grep -m1 -E "^admin_username" terraform/terraform.tfvars | sed -E 's/.*= *"([^"]+)".*/\1/')"
+TF_USER="${TF_USER:-agentbox}"
 echo "Waiting for first boot + SSH (cloud-init takes a few minutes)…"
 for _ in $(seq 1 30); do
-  ssh -o BatchMode=yes -o ConnectTimeout=6 -o StrictHostKeyChecking=accept-new "hermes@${IP}" true 2>/dev/null && break
+  ssh -o BatchMode=yes -o ConnectTimeout=6 -o StrictHostKeyChecking=accept-new "${TF_USER}@${IP}" true 2>/dev/null && break
   sleep 10
 done
-ssh -o BatchMode=yes -o ConnectTimeout=6 "hermes@${IP}" true || { bad "SSH never came up — Hetzner console → web console, or re-run (it resumes)"; exit 1; }
+ssh -o BatchMode=yes -o ConnectTimeout=6 "${TF_USER}@${IP}" true || { bad "SSH never came up — Hetzner console → web console, or re-run (it resumes)"; exit 1; }
 ok "SSH answers"
 export HCLOUD_TOKEN TAILSCALE_AUTHKEY
 set +e

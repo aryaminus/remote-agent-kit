@@ -4,12 +4,12 @@
 
 Provisions a hardened [Hetzner Cloud](https://www.hetzner.com/cloud) VPS
 (cx33, x86, Ubuntu 24.04), joins it to your [Tailscale](https://tailscale.com)
-tailnet (no public SSH, no open ports), installs
-[Hermes Agent](https://github.com/NousResearch/hermes-agent) with a Telegram
-gateway, exposes the API + dashboard for the [Perch](https://aryaminus.github.io/perch-site/)
-phone client, and sets up isolated multi-agent coding sessions
+tailnet for private phone/API access, and installs [Hermes Agent](https://github.com/NousResearch/hermes-agent)
+with an optional Telegram gateway, a tailnet API + dashboard for the
+[Perch](https://aryaminus.github.io/perch-site/) phone client (native or PWA),
+and isolated multi-agent coding sessions
 ([Agent of Empires](https://github.com/agent-of-empires/agent-of-empires):
-Claude Code, Codex CLI, OpenCode, Pi).
+Claude Code, Codex CLI, OpenCode, CommandCode).
 
 > This is a **bootstrap / infra-template repo**, not dotfiles. Dotfiles configure
 > a laptop; this repo provisions a server. Terraform owns provisioning
@@ -19,22 +19,25 @@ Claude Code, Codex CLI, OpenCode, Pi).
 ## Architecture
 
 ```
-Terraform (terraform/)          Ansible (ansible/)                Phone / laptop
+Terraform (terraform/)          Ansible (ansible/)                You
 ┌──────────────────┐            ┌────────────────────────┐        ┌──────────────────┐
-│ hcloud_firewall  │   ssh      │ common: user, UFW,     │ tailnet│ Perch app        │
-│ hcloud_server    ├───────────►│ fail2ban, swap         │◄──────►│ Telegram bot     │
-│ hcloud_ssh_key   │            │ tailscale: up + lock   │ 100.x  │ Termius / Blink  │
-└──────────────────┘            │ hermes: agent+gateway  │        └──────────────────┘
-                                │ telegram: bot polling  │
-                                │ perch: api 8642+dash   │
-                                │ aoe: multi-agent jail  │
+│ hcloud_firewall  │   ssh      │ common: user, UFW,     │ tailnet│ Perch app / PWA  │
+│ hcloud_server    ├───────────►│ fail2ban, swap         │◄──────►│ Telegram (opt)   │
+│ hcloud_ssh_key   │            │ tailscale: up (+serve) │ public │ Mac terminal SSH │
+└──────────────────┘            │ hermes: agent+gateway  │  22    └──────────────────┘
+                                │ telegram: bot (opt-in) │
+                                │ perch: api 8642+--+dash│
+                                │ aoe: claude/codex/open-│
+                                │  code/cmd sandboxes    │
                                 │ backups: cron+snapshots│
                                 └────────────────────────┘
 ```
 
-* No inbound ports from the internet after Tailscale is up — SSH, API (8642),
-  dashboard (9119) answer on the tailnet only.
-* Telegram uses **polling**: the gateway dials out, nothing dials in.
+* SSH answers publicly too (key-only, edge-firewalled to your IP — for
+  laptops without a VPN client); API (8642), dashboard (9119), serve ports
+  and the web app (8443) answer on the tailnet only. Set
+  `lock_ssh_to_tailnet: true` in `hosts.yml` for tailnet-only SSH.
+* Telegram is **off unless configured** and polls out — nothing dials in.
 * Each coding agent runs in its own container + `tmux` session via AoE.
 
 ## Quickstart — pick a path
@@ -74,10 +77,16 @@ then provisions → configures → verifies → prints the phone-pairing steps.
 Re-running resumes where you stopped; nothing done is redone.
 Pass `--reset` to start over, `--yes` to skip confirmations.
 
-You need 3 free accounts first (5 min): Hetzner, Tailscale, Telegram —
+You need 3 free accounts first (5 min): Hetzner, Tailscale, Telegram
+(optional — the bot stays off unless you configure it) —
 `docs/prereqs.md`. Trying costs cents (hourly billing, `make teardown`
 destroys). Manual path (same steps the wizard runs): `make init`,
 `make preflight`, `make plan`, `make apply`, `make deploy`, `make doctor`.
+
+No laptop VPN needed for terminal use: `lock_ssh_to_tailnet: false`
+(default) keeps SSH public + key-only + edge-firewalled to your IP, while
+all services stay tailnet-only. Daily driver commands and the phone
+setup: `docs/usage.md`.
 
 Day to day: `make ssh`, `make logs`, `make backup`. Full lifecycle in
 `docs/ops-runbook.md`. Costs in `docs/costs.md` (~€9.99/mo VPS + $5–20/mo model
@@ -88,12 +97,12 @@ agent-readable repo index in `docs/llms.txt`.
 
 ```
 Makefile                    operator entrypoint — run `make help`
-.env.example                every secret, placeholder values only
+.env.example                every secret key, placeholder values only
 terraform/                  provisioning: firewall, ssh key, server, outputs
-ansible/                    configuration: 7 idempotent roles + playbook
-scripts/                    glue: doctor, backup, pair helper, repo_check
-docs/                       prereqs, telegram, tailscale+perch, runbook, costs
-.github/workflows/          CI: terraform validate + secret scan
+ansible/                    configuration: idempotent roles + playbook
+scripts/                    ask/doctor/backup/pair/rollback/preflight/start/finish + repo_check
+docs/                       usage (daily driver), access, runbook, costs, ADRs
+.github/workflows/          CI: terraform validate + ansible syntax + secret scan
 ```
 
 ## Non-goals (YAGNI — deliberately out of scope)

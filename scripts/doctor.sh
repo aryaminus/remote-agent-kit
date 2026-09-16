@@ -5,10 +5,13 @@
 # Usage: ./scripts/doctor.sh
 set -euo pipefail
 
-# Server's tailnet IP from the LOCAL tailnet (hostname match, default hermes).
+# Server's tailnet IP from the LOCAL tailnet (hostname from inventory).
 # Learned the hard way: after lockdown, the public IP stops answering SSH,
 # and checks without a timeout hang for minutes instead of failing fast.
-TIP="$(tailscale status 2>/dev/null | awk '$2 == "hermes" {print $1; exit}' || true)"
+WANT_HOST="$(grep -m1 agent_hostname ansible/inventory/group_vars/all.yml 2>/dev/null | awk '{print $2}' || echo agentbox)"
+# The canonical phone URL (https://<host>.<tail>.ts.net) is derived+printed
+# by pair.sh — one derivation site, not two.
+TIP="$(tailscale status 2>/dev/null | awk -v h="$WANT_HOST" '$2 == h {print $1; exit}' || true)"
 if [[ -n "$TIP" ]]; then
   HOST="$TIP"
   echo "remote-agent-kit · doctor (over tailnet $HOST)"
@@ -17,7 +20,8 @@ else
   [[ -n "$HOST" ]] || { echo "No terraform output. Run: make apply"; exit 2; }
   echo "remote-agent-kit · doctor ($HOST — no tailnet route; install + sign in to Tailscale for tailnet checks)"
 fi
-SSH="ssh -o BatchMode=yes -o ConnectTimeout=10 hermes@${HOST}"
+INV_USER="$(grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $2}' || echo agentbox)"
+SSH="ssh -o BatchMode=yes -o ConnectTimeout=10 ${INV_USER}@${HOST}"
 TS="$SSH tailscale ip -4 2>/dev/null | head -1"
 
 pass=0; fail=0

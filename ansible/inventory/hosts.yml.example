@@ -1,9 +1,24 @@
 # Copy to hosts.yml (gitignored) and set the IPv4 from `terraform output`.
 # After the tailscale role runs once, you can switch ansible_host to the
 # tailnet IP (100.x.y.z) so later runs never touch the public internet.
+#
+# Every knob below is optional — group defaults live in
+# inventory/group_vars/all.yml and are sane out of the box:
+#   agent_hostname / admin_username .. box identity (default: agentbox)
+#   lock_ssh_to_tailnet .............. true  = sshd answers tailnet-only
+#                                      false = also public (key-only +
+#                                              edge-FW-pinned; for laptops
+#                                              without a VPN client)
+#   enable_telegram / enable_aoe / enable_herdr / enable_backups / enable_perch_api
+#   install_agent_clis ............... claude/codex/opencode/cmd + gh
+#   model_provider (nous|openrouter|anthropic), telegram_platform
+#   backup_dir, backup_retention_days, age_public_key
+#   perch_web_tarball ("../.." = skip PWA), tailscale_extra_args
+#   git_user_name (default agentbox); GIT_AUTHOR_EMAIL via .env
 all:
   hosts:
-    hermes:
+    agentbox:
       ansible_host: CHANGEME # e.g. 46.250.00.00, later 100.64.x.y
-      ansible_user: hermes
+      ansible_user: agentbox
       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      # lock_ssh_to_tailnet: false   # uncomment for public-SSH laptops

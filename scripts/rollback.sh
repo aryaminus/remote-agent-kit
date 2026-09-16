@@ -8,8 +8,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 HOST="$(terraform -chdir=terraform output -raw server_ipv4 2>/dev/null || true)"
+INV_USER="$(grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $2}' || echo agentbox)"
 [[ -n "$HOST" ]] || { echo "No terraform output. Run: make apply"; exit 2; }
-SSH="ssh hermes@${HOST}"
+SSH="ssh ${INV_USER}@${HOST}"
 
 FILE="${1:-}"
 if [[ -z "$FILE" ]]; then
@@ -32,7 +33,7 @@ echo "→ snapshotting current state on server…"
 $SSH "tar -czf ~/backups/pre-rollback-${TS}.tar.gz -C ~/.hermes . 2>/dev/null; echo snapshot-ok"
 
 echo "→ uploading ${FILE}…"
-rsync -avz --progress "$FILE" "hermes@${HOST}:~/backups/restore-incoming.tgz"
+rsync -avz --progress "$FILE" "${INV_USER}@${HOST}:~/backups/restore-incoming.tgz"
 
 echo "→ stopping gateway, restoring, restarting…"
 $SSH 'systemctl --user stop hermes-gateway hermes-dashboard 2>/dev/null;
