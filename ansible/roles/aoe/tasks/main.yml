@@ -138,6 +138,15 @@
     src: /home/{{ admin_username }}/.ssh/id_ed25519.pub
   register: gh_pubkey
 
+- name: Trust GitHub's host key (pin verified 2026-09-16; rotate only on GitHub's notice)
+  ansible.builtin.known_hosts:
+    path: /home/{{ admin_username }}/.ssh/known_hosts
+    name: github.com
+    key: "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl"
+    state: present
+  become_user: "{{ admin_username }}"
+  become: true
+
 - name: GitHub key reminder
   ansible.builtin.debug:
     msg: "Add this to github.com → Settings → SSH keys: {{ (gh_pubkey.content | b64decode).strip() }}"

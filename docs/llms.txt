@@ -11,7 +11,7 @@
 - README.md — architecture diagram, quickstart (`make init/plan/apply/deploy/pair/doctor`), layout, safety
 - docs/prereqs.md — the 7 things to gather first (tokens, keys, bot, model)
 - docs/ops-runbook.md — daily commands, updates, failure-mode table, teardown
-- docs/alternatives.md — exe.dev / box.ascii.dev / Vercel Eve evaluation + when to use each
+- docs/alternatives.md — exe.dev / boat / Vercel Eve evaluation + when to use each
 - docs/costs.md — pay-only-for-the-box truth table + specs + why x86, why disk-not-RAM
 - docs/privacy-considerations.md — threat model: keys are shells, QR is a credential
 - docs/adr/0001-hetzner-tailscale.md — why hybrid over PaaS/plain VPS
