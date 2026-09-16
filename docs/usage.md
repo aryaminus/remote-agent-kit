@@ -6,11 +6,22 @@ to the internet.
 
 ## 1. From your laptop terminal (zero apps beyond ssh)
 
+The one-time setup on your Mac (already done on the owner's machine):
+
 ```bash
-ssh hermes@hermes.<your-tailnet>.ts.net   # MagicDNS name = your tailnet
+# ~/.ssh/config — 'agent' auto-attaches a persistent tmux on the box:
+Host hermes agent
+    HostName hermes.<your-tailnet>.ts.net
+    User hermes
+    RemoteCommand tmux attach-session -t main 2>/dev/null || tmux new-session -A -s main
+    RequestTTY yes
 ```
 
-(Tailscale running on the Mac is the only requirement — the App Store app.)
+Then from any terminal (Warp included — see the workflows below):
+
+```bash
+ssh agent          # you're on the box, in a session that never dies
+```
 
 On the box you have, in order of power:
 
@@ -20,6 +31,17 @@ On the box you have, in order of power:
 | `aoe` | The coding-agent workshop (below). |
 | `tmux` | Anything long-running; detach with `Ctrl+b d`, reattach next login. |
 | `journalctl --user -u hermes-gateway -f` | Watch the agent think (what Perch/Telegram rides on). |
+
+**One-shot questions without SSH:**
+
+```bash
+./scripts/ask.sh "what did you do today?"
+```
+
+Creates/reuses a `terminal` session on the gateway and prints just the
+reply. Warp users: an `agent-ask` workflow ships in this section's setup —
+type `agent-ask <question>` anywhere. (Suggested `~/.warp/workflows/`:
+`agent` → `ssh agent`, `agent-ask`, `agent-doctor`, `agent-logs`.)
 
 Talking to the agent **from your Mac without SSH** — the API is your gateway,
 key in `.env` (`API_SERVER_KEY`):
