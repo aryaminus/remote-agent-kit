@@ -24,6 +24,10 @@ Thumbs.db
 # ── Local run history (Gilb's Law logs — yours, never shipped) ───
 logs/
 
+# ── ControlKeel project-local state (auto-seeded when CK runs inside the
+#    repo; contains session/governance history — must NEVER be committed) ──
+controlkeel/
+
 # ── Tool caches ─────────────────────────────────────────────
 .ansible/
 ansible/collections/*
