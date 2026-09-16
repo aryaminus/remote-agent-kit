@@ -51,6 +51,24 @@ else
   ok "SSH/API/dashboard answer on the tailnet only"
 fi
 
+# ── 1b. HTTPS for iPhone (Tailscale Serve) ────────────────
+# iOS App Transport Security refuses cleartext HTTP to 100.x, so the phone
+# app can ONLY reach https://<host>.<tail>.ts.net. Mirrors the Ansible role.
+if tailscale serve status 2>/dev/null | grep -q "https://"; then
+  ok "HTTPS serve already on: $(tailscale serve status | head -1)"
+else
+  sudo tailscale set --operator="$USER" 2>/dev/null || true
+  if tailscale serve --bg --https=443 "http://127.0.0.1:$API_PORT" 2>&1 | grep -q "tailnet"; then
+    sudo ufw allow from 100.64.0.0/10 to any port 443 proto tcp
+    HTTPS_NAME="$(tailscale status --json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("Self",{}).get("DNSName","").rstrip("."))' 2>/dev/null || true)"
+    ok "HTTPS serve on${HTTPS_NAME:+: https://$HTTPS_NAME}"
+    echo "  ⚠️  If this FAILED with 'Serve is not enabled': open the printed URL"
+    echo "      once in your Tailscale admin (DNS → HTTPS certificates), then re-run."
+  else
+    warn "tailscale serve failed — see message above (likely the one-time tailnet approval)"
+  fi
+fi
+
 # ── 2. Model ──────────────────────────────────────────────
 say "2/5 · Model (who thinks — billed by them, free options exist)"
 if "$BIN" doctor >/dev/null 2>&1; then
