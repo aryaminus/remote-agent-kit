@@ -55,6 +55,10 @@ else
   TIP="$(tailscale ip -4 | head -1)"
   ok "joined tailnet ($TIP)"
   # Lock SSH + UFW to the tailnet (keep this SSH session open till verified).
+  # ssh.socket (Ubuntu 24.04 socket activation) owns 0.0.0.0:22 and IGNORES
+  # ListenAddress — disable it or the lockdown silently doesn't happen
+  # (live-tested: config said tailnet-only, socket still answered publicly).
+  sudo systemctl disable --now ssh.socket >/dev/null 2>&1 || true
   sudo sed -i -E '/^ListenAddress/d' /etc/ssh/sshd_config
   printf 'ListenAddress %s\nListenAddress 127.0.0.1\n' "$TIP" | sudo tee -a /etc/ssh/sshd_config >/dev/null
   sudo systemctl restart ssh
