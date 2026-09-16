@@ -76,6 +76,73 @@
   become: true
   when: install_agent_clis | default(true)
 
+# GitHub CLI (gh): official signed apt repo, idempotent via `creates`-style
+# guard (dpkg -s check). Scripts assume `gh` exists for the device-flow step.
+- name: GitHub CLI apt keyring
+  ansible.builtin.get_url:
+    url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+    dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    mode: "0644"
+    checksum: "sha256:{{ gh_keyring_sha256 }}"
+
+- name: GitHub CLI apt source
+  ansible.builtin.apt_repository:
+    repo: "deb [arch={{ ansible_architecture_map[ansible_architecture] | default('amd64') }} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
+    filename: github-cli
+    state: present
+
+- name: Install gh
+  ansible.builtin.apt:
+    name: gh
+    state: present
+    update_cache: true
+
+# git + GitHub for the box (so agents can clone/push without the laptop):
+# ed25519 key (no passphrase — unattended agents), sane identity, main
+# default. The PUBLIC key must be added once at github.com → Settings →
+# SSH keys (the role prints it each run until GitHub accepts it). Private
+# key never leaves the box; nothing here is a secret to commit.
+- name: Install git (usually already present via cloud-init)
+  ansible.builtin.apt:
+    name: git
+    state: present
+
+- name: Box GitHub deploy/operator keypair
+  ansible.builtin.command:
+    cmd: ssh-keygen -t ed25519 -N "" -f /home/{{ admin_username }}/.ssh/id_ed25519 -C "hermes-agent-box"
+    creates: /home/{{ admin_username }}/.ssh/id_ed25519
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Tighten private key permissions
+  ansible.builtin.file:
+    path: /home/{{ admin_username }}/.ssh/id_ed25519
+    mode: "0600"
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+
+- name: Box git identity (agent commits land under this name/email)
+  ansible.builtin.command:
+    cmd: git config --global {{ item.key }} "{{ item.value }}"
+  become_user: "{{ admin_username }}"
+  become: true
+  loop:
+    - { key: 'user.name', value: 'hermes-agent' }
+    - { key: 'user.email', value: 'sunim.54@gmail.com' }
+    - { key: 'init.defaultBranch', value: 'main' }
+    - { key: 'pull.rebase', value: 'false' }
+  changed_when: false
+
+- name: Show the PUBLIC key to register on GitHub (authorized only after you add it)
+  ansible.builtin.slurp:
+    src: /home/{{ admin_username }}/.ssh/id_ed25519.pub
+  register: gh_pubkey
+
+- name: GitHub key reminder
+  ansible.builtin.debug:
+    msg: "Add this to github.com → Settings → SSH keys: {{ (gh_pubkey.content | b64decode).strip() }}"
+  when: install_agent_clis | default(true)
+
 - name: Verify AoE sees the installed CLIs
   ansible.builtin.command: /usr/local/bin/aoe agents
   become_user: "{{ admin_username }}"

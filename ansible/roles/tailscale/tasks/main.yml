@@ -57,10 +57,18 @@
     state: stopped
   failed_when: false
 
-- name: Bind sshd to tailnet IP + localhost only
+- name: Bind sshd to tailnet IP + localhost only (or public, per operator choice)
+  # lock_ssh_to_tailnet: true  → sshd answers ONLY on the tailnet (default,
+  #   most conservative; requires Tailscale on every client).
+  # lock_ssh_to_tailnet: false → sshd answers publicly too. Still safe-ish:
+  #   key-only auth, no root password, fail2ban, and the Hetzner edge
+  #   firewall's SSH rule can pin it to the operator's IP (my_ip in tfvars).
+  #   Chosen by operators who don't want a VPN client on their laptop.
+  #   The API/dashboard/serve STAY tailnet-only either way.
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?ListenAddress'
+    state: "{{ 'present' if lock_ssh_to_tailnet | default(true) else 'absent' }}"
     line: "ListenAddress {{ ts_ip.stdout }}\nListenAddress 127.0.0.1"
   notify: Restart sshd
 

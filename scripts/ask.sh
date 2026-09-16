@@ -3,18 +3,22 @@
 #
 #   ./scripts/ask.sh "what did you do today?"
 #
-# Creates/reuses a session (id kept in logs/ask-session), prints just the
-# reply text. The gateway address is derived from your local tailnet (same
-# logic as pair.sh) — or pin it with AGENT_URL in .env.
+# Transport: SSH by default (the curl runs INSIDE the box against
+# 127.0.0.1:8642 — your Mac needs no VPN, no open ports, and never holds
+# the API key in memory beyond the command). Set ASK_TRANSPORT=https to
+# force the Tailscale URL instead (needs Tailscale running locally).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MSG="${1:?usage: ask.sh \"your question\"}"
-[[ -f .env ]] && { set -a; . ./.env; set +a; }
+SSH="ssh -o BatchMode=yes -o ConnectTimeout=10 hermes-x"
+MODE="${ASK_TRANSPORT:-auto}"
+mkdir -p logs
 
-URL="${AGENT_URL:-}"
-if [[ -z "$URL" ]]; then
-  URL="$(tailscale status --json 2>/dev/null | python3 -c 'import json,sys
+if [[ "$MODE" == "https" ]] || ! $SSH true 2>/dev/null; then
+  # Tailnet/direct-URL path (needs local Tailscale or explicit AGENT_URL).
+  [[ -f .env ]] && { set -a; . ./.env; set +a; }
+  URL="${AGENT_URL:-$(tailscale status --json 2>/dev/null | python3 -c 'import json,sys
 try:
     d = json.load(sys.stdin)
     suf = d.get("MagicDNSSuffix", "")
@@ -22,29 +26,69 @@ try:
                  if p.get("HostName") == "hermes"), "")
     print(f"https://{host}.{suf}" if host and suf else "")
 except Exception:
-    print("")' || true)"
-fi
-[[ -n "$URL" ]] || { echo "Cannot derive the gateway address — is Tailscale running? (or set AGENT_URL in .env)"; exit 1; }
-: "${API_SERVER_KEY:?API_SERVER_KEY missing from .env — run scripts/start.sh once}"
-
-AUTH="Authorization: Bearer $API_SERVER_KEY"
-mkdir -p logs
-
-# Reuse the ask-session, else create it (survives as long as the gateway does).
-SID="$(cat logs/ask-session 2>/dev/null || true)"
-if [[ -z "$SID" ]] || ! curl -s -m 8 -o /dev/null -w '%{http_code}' -H "$AUTH" "$URL/api/sessions/$SID" | grep -q 200; then
-  SID="$(curl -s -m 10 -X POST -H "$AUTH" -H 'Content-Type: application/json' \
-    -d '{"title":"terminal"}' "$URL/api/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["session"]["id"])')"
-  printf '%s' "$SID" > logs/ask-session
-fi
-
-# Build the payload with python so quotes/newlines in the message are safe.
-PAYLOAD="$(MSG="$MSG" python3 -c 'import json,os; print(json.dumps({"message": os.environ["MSG"]}))')"
-
-curl -s -m 120 -X POST -H "$AUTH" -H 'Content-Type: application/json' \
-  -d "$PAYLOAD" "$URL/api/sessions/$SID/chat" \
-  | python3 -c 'import json,sys
+    print("")' || true)}"
+  [[ -n "$URL" ]] || { echo "No route: SSH unreachable and no tailnet URL (is Tailscale running? set AGENT_URL in .env)"; exit 1; }
+  : "${API_SERVER_KEY:?API_SERVER_KEY missing from .env — run scripts/start.sh once}"
+  AUTH="Authorization: Bearer $API_SERVER_KEY"
+  sid_flow() {
+    SID="$(cat logs/ask-session 2>/dev/null || true)"
+    if [[ -z "$SID" ]] || ! curl -s -m 8 -o /dev/null -w '%{http_code}' -H "$AUTH" "$URL/api/sessions/$SID" | grep -q 200; then
+      SID="$(curl -s -m 10 -X POST -H "$AUTH" -H 'Content-Type: application/json' \
+        -d '{"title":"terminal"}' "$URL/api/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["session"]["id"])')"
+      printf '%s' "$SID" > logs/ask-session
+    fi
+    PAYLOAD="$(MSG="$MSG" python3 -c 'import json,os; print(json.dumps({"message": os.environ["MSG"]}))')"
+    curl -s -m 120 -X POST -H "$AUTH" -H 'Content-Type: application/json' \
+      -d "$PAYLOAD" "$URL/api/sessions/$SID/chat" \
+      | python3 -c 'import json,sys
 d = json.load(sys.stdin)
 if "message" not in d:
     print(json.dumps(d)[:400]); sys.exit(1)
 print(d["message"]["content"])'
+  }
+  sid_flow
+else
+  # SSH path: everything executes on the box; nothing but the answer crosses.
+  export MSG
+  # shellcheck disable=SC2029  # $MSG is expanded CLIENT-side on purpose (payload)
+  $SSH python3 - "$MSG" <<'PYEOF'
+import json, os, subprocess, sys
+from datetime import datetime, timezone
+
+msg = sys.argv[1]
+KEY = subprocess.run(
+    "grep -m1 '^API_SERVER_KEY=' ~/.hermes/.env | cut -d= -f2-",
+    shell=True, capture_output=True, text=True).stdout.strip()
+SIDF = os.path.join(os.path.expanduser("~"), ".ask-session")
+
+def api(method, path, data=None):
+    cmd = ["curl", "-s", "-m", "120", "-X", method,
+           "-H", f"Authorization: Bearer {KEY}"]
+    if data is not None:
+        cmd += ["-H", "Content-Type: application/json", "-d", json.dumps(data)]
+    cmd.append("http://127.0.0.1:8642" + path)
+    return subprocess.run(cmd, capture_output=True, text=True).stdout
+
+def sessions():
+    d = json.loads(api("GET", "/api/sessions"))
+    data = d.get("data", d.get("sessions", []))
+    return {s.get("id") for s in data if isinstance(s, dict) and s.get("id")}
+
+try:
+    with open(SIDF) as f:
+        sid = f.read().strip()
+    if sid not in sessions():
+        raise ValueError("stale")
+except Exception:
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    sid = json.loads(api("POST", "/api/sessions",
+                         {"title": f"terminal {ts}"}))["session"]["id"]
+    with open(SIDF, "w") as f:
+        f.write(sid)
+
+ans = json.loads(api("POST", f"/api/sessions/{sid}/chat", {"message": msg}))
+if "message" not in ans:
+    print(json.dumps(ans)[:400]); sys.exit(1)
+print(ans["message"]["content"])
+PYEOF
+fi
