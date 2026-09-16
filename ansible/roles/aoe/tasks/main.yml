@@ -61,6 +61,7 @@
   loop:
     - { cmd: 'export PATH="$HOME/.local/bin:$PATH"; npm install -g @anthropic-ai/claude-code', creates: '/home/{{ admin_username }}/.local/bin/claude' }
     - { cmd: 'export PATH="$HOME/.local/bin:$PATH"; npm install -g @openai/codex', creates: '/home/{{ admin_username }}/.local/bin/codex' }
+    - { cmd: 'export PATH="$HOME/.local/bin:$PATH"; npm install -g command-code@latest', creates: '/home/{{ admin_username }}/.local/bin/cmd' }
     - { cmd: 'export PATH="$HOME/.local/bin:$PATH"; curl -fsSL https://opencode.ai/install | bash', creates: '/home/{{ admin_username }}/.opencode/bin/opencode' }
   when: install_agent_clis | default(true)
 
@@ -156,7 +157,9 @@
   # OPENROUTER_API_KEY / ANTHROPIC_API_KEY in .env land in ~/.hermes/.env
   # (0600) so every CLI inherits them. OpenCode is provider-agnostic and
   # reads OPENROUTER_API_KEY natively; codex reads OPENAI_API_KEY; claude
-  # reads ANTHROPIC_API_KEY. no_log keeps values out of logs.
+  # reads ANTHROPIC_API_KEY; command-code accepts COMMANDCODE_API_KEY for
+  # headless auth (falls back to `cmd login` device/browser flow).
+  # no_log keeps values out of logs.
   ansible.builtin.lineinfile:
     path: /home/{{ admin_username }}/.hermes/.env
     regexp: "^{{ item.key }}="
@@ -168,6 +171,7 @@
     - { key: 'OPENROUTER_API_KEY', value: "{{ lookup('env', 'OPENROUTER_API_KEY') }}" }
     - { key: 'ANTHROPIC_API_KEY', value: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}" }
     - { key: 'OPENAI_API_KEY', value: "{{ lookup('env', 'OPENAI_API_KEY') }}" }
+    - { key: 'COMMANDCODE_API_KEY', value: "{{ lookup('env', 'COMMANDCODE_API_KEY') }}" }
   when: item.value | length > 0
   no_log: true
 
