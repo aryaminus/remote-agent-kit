@@ -65,6 +65,7 @@ ask() {
     fi
     # trim spaces
     val="$(printf '%s' "$val" | tr -d '[:space:]')"
+    if [[ -z "$val" && ! -t 0 ]]; then echo "stdin closed with no usable input — aborting (run interactively)"; exit 1; fi
     if [[ -z "$val" ]]; then warn "empty — try again"; continue; fi
     if [[ -n "$vfn" ]] && ! "$vfn" "$val"; then continue; fi
     break
@@ -118,8 +119,13 @@ say "2/7 · API keys (typed blind, validated, stored mode 600 — never printed,
 touch .env; chmod 600 .env
 ask HCLOUD_TOKEN "Hetzner Cloud API token" "" 1 v_hcloud
 ask TAILSCALE_AUTHKEY "Tailscale auth key" "" 1 v_tailscale
-ask TELEGRAM_BOT_TOKEN "Telegram bot token (@BotFather)" "" 1 v_telegram
-ask TELEGRAM_ALLOWED_USERS "Your numeric Telegram user id (@userinfobot)" "" 0 v_tgusers
+if confirm "Set up the Telegram bot? (optional — Enter n to skip, the phone app is enough)"; then
+  ask TELEGRAM_BOT_TOKEN "Telegram bot token (@BotFather)" "" 1 v_telegram
+  ask TELEGRAM_ALLOWED_USERS "Your numeric Telegram user id (@userinfobot)" "" 0 v_tgusers
+else
+  grep -v -E '^(TELEGRAM_BOT_TOKEN|TELEGRAM_ALLOWED_USERS)=' .env > .env.tmp || true; mv .env.tmp .env
+  ok "Telegram skipped (re-run with --tags telegram anytime)"
+fi
 # shellcheck disable=SC1091
 set -a; . ./.env; set +a
 

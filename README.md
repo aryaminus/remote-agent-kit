@@ -37,7 +37,29 @@ Terraform (terraform/)          Ansible (ansible/)                Phone / laptop
 * Telegram uses **polling**: the gateway dials out, nothing dials in.
 * Each coding agent runs in its own container + `tmux` session via AoE.
 
-## Quickstart — one command
+## Quickstart — pick a path
+
+[![Deploy to Hetzner Cloud](https://img.shields.io/badge/Deploy_to-Hetzner_Cloud-d50c2d)](https://console.hetzner.cloud)
+
+**Path A — one-click (no tools installed, ~20 min).** Click the button above,
+then Add Server: Ubuntu 24.04 · CPX21 (x86) · your region · your SSH key. At
+the bottom, expand **Cloud config** and paste exactly this (it pulls the
+current setup from this repo — never rots, contains zero secrets):
+
+```yaml
+#include
+https://raw.githubusercontent.com/aryaminus/remote-agent-kit/main/deploy/hetzner-cloud-init.yaml
+```
+
+Create, wait for CPU to idle in Graphs (~10 min), then SSH in and run
+`bash ~/finish.sh` — it asks for the 2–3 secrets (Tailscale key, model,
+optional Telegram) and completes the box. Why no true one-click button?
+Hetzner only offers `console.hetzner.com/deploy/<app>` to registered Apps —
+this redirect + paste is the closest the platform allows, and it's honest
+about the one manual step (secrets can't live in cloud-init: user-data stays
+readable via the metadata service).
+
+**Path B — wizard, reproducible (`./scripts/start.sh` / `make start`).**
 
 ```bash
 git clone https://github.com/aryaminus/remote-agent-kit.git

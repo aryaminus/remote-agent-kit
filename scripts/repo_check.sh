@@ -57,6 +57,7 @@ bad = 0
 # Vendored collections are third-party — checked upstream, not here.
 mine = [f for f in glob.glob("ansible/**/*.yml", recursive=True)
         if not f.startswith("ansible/collections/")]
+mine += glob.glob("deploy/*.yaml")  # one-click cloud-init: must at least parse
 for f in mine + glob.glob(".github/workflows/*.yml"):
     try:
         docs = list(yaml.safe_load_all(open(f)))

@@ -55,12 +55,26 @@ your phone reaches everything from anywhere with the Tailscale app signed in.
 2. `make ssh` (uses the tailnet once known) or bootstrap SSH to the public IP.
 3. On the server: `tailscale ip -4` → note `100.x.y.z`.
 4. `make pair` → follow the QR flow **on the server**. The pairing script is
-   public: `https://raw.githubusercontent.com/aryaminus/perch-site/main/pair.sh`
-   (same script the Perch app docs point to) — run it with `--tailscale`.
-   It reads the server key and prints the QR. Never fetch pairing tools from
-   anywhere else.
+   public — download-then-run, never piped (Perch's own rule: read it first):
+   `curl -fsSL https://aryaminus.github.io/perch-site/pair.sh -o pair.sh`
+   then `bash pair.sh --tailscale`. It reads the server key and prints the QR.
 5. In Perch: *Scan to connect*. No camera? *Enter details instead* with the
    printed address + key.
+
+## After pairing — finish the Perch setup (all public scripts)
+
+Pairing connects the app; these three harden and complete it. Same
+download-then-run form for each (`curl -fsSL
+https://aryaminus.github.io/perch-site/<name> -o <name> && bash <name>`):
+
+1. **`enable-approvals.sh`** — makes the agent ASK before dangerous commands
+   (`approvals.mode: manual` + memory write approval). Do this: the default
+   `smart` mode can fail open and execute without asking.
+2. **`ntfy-setup.sh`** — generates your notification topic + prints the exact
+   gateway config lines for it.
+3. **`install-approval-bridge.sh`** — installs the hook plugin so approvals
+   reach your phone while Perch is closed (this kit's Ansible already does
+   this when `NTFY_TOPIC` is set — skip if deploy configured it).
 
 ## Editor + terminal access (beyond the phone app)
 
