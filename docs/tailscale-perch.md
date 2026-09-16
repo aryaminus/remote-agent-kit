@@ -11,10 +11,21 @@ your phone reaches everything from anywhere with the Tailscale app signed in.
 1. Install Tailscale on laptop + phone, same account as the auth key.
 2. `make ssh` (uses the tailnet once known) or bootstrap SSH to the public IP.
 3. On the server: `tailscale ip -4` → note `100.x.y.z`.
-4. `make pair` → follow the Perch QR flow **on the server**
-   (Perch's `scripts/pair.sh --tailscale` reads the server key and prints the QR).
+4. `make pair` → follow the QR flow **on the server**. The pairing script is
+   public: `https://raw.githubusercontent.com/aryaminus/perch-site/main/pair.sh`
+   (same script the Perch app docs point to) — run it with `--tailscale`.
+   It reads the server key and prints the QR. Never fetch pairing tools from
+   anywhere else.
 5. In Perch: *Scan to connect*. No camera? *Enter details instead* with the
    printed address + key.
+
+## Editor + terminal access (beyond the phone app)
+
+* **SSH from phone/tablet:** Termius (connection manager, cloud sync) or Blink
+  Shell (keyboard-centric, Apple) — point at the tailnet IP or MagicDNS name.
+* **VS Code:** Remote-SSH to the tailnet address for full IDE inspection of
+  server checkouts; the Super CLI extension unifies the installed agent CLIs
+  inside the editor. Agents themselves stay sandboxed in AoE containers.
 
 ## Rules
 

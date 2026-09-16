@@ -20,12 +20,14 @@
   no_log: true
 
 - name: Configure the gateway platform (writes config, starts nothing)
-  ansible.builtin.command: /home/{{ admin_username }}/.hermes/bin/hermes gateway setup --platform telegram
+  ansible.builtin.command: /home/{{ admin_username }}/.hermes/bin/hermes gateway setup --platform {{ telegram_platform }}
   become_user: "{{ admin_username }}"
   become: true
   register: gw_setup
   changed_when: "'already' not in (gw_setup.stdout | lower)"
   failed_when: false
+  # NOTE: telegram_platform defaults to telegram. Other platforms
+  # (discord/whatsapp/signal) need their own token env vars — see group_vars.
 
 - name: Install the gateway as a user systemd service (non-interactive workaround)
   # Upstream asks two [Y/n] prompts with no --yes flag; over SSH stdin it

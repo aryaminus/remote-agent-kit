@@ -75,6 +75,6 @@
 - name: Pairing instructions
   ansible.builtin.debug:
     msg: >-
-      On the server run: tailscale ip -4 → then from your laptop
-      `bash scripts/pair.sh --tailscale` (Perch repo) or scan the QR it prints.
-      The QR carries API_SERVER_KEY — trusted camera only.
+      On the server run the public pairing script:
+      bash <(curl -fsSL https://raw.githubusercontent.com/aryaminus/perch-site/main/pair.sh) --tailscale
+      then scan the QR with Perch. The QR carries API_SERVER_KEY — trusted camera only.

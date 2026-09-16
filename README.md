@@ -6,7 +6,7 @@ Provisions a hardened [Hetzner Cloud](https://www.hetzner.com/cloud) VPS
 (CPX21, x86, Ubuntu 24.04), joins it to your [Tailscale](https://tailscale.com)
 tailnet (no public SSH, no open ports), installs
 [Hermes Agent](https://github.com/NousResearch/hermes-agent) with a Telegram
-gateway, exposes the API + dashboard for the [Perch](https://github.com/aryaminus/perch)
+gateway, exposes the API + dashboard for the [Perch](https://aryaminus.github.io/perch-site/)
 phone client, and sets up isolated multi-agent coding sessions
 ([Agent of Empires](https://github.com/agent-of-empires/agent-of-empires):
 Claude Code, Codex CLI, OpenCode, Pi).
