@@ -65,15 +65,21 @@ What it is: persistent Ubuntu VMs with SSH/SCP, Docker *inside*, dedicated
 IPv6/IPv4 per box, disk-level **fork**, 60 fps virtual desktop, EU regions
 (DE/FI/CZ→FR per their pages: Germany, Finland, France).
 
-* **Billing:** $20/mo account minimum → 2M VM-seconds (~555 h) of 4 vCPU/8 GB
-  box-time, billed by the second across one box or many. Sizes: small
+* **Billing:** $20/mo account minimum → ~555 h of 4 vCPU/8 GB
+  box-time, billed by the second across one box or many (a recent
+  announcement quotes **$0.036/vm-hr for 8c/16GB/100GB** boxes, up to
+  **2,000 concurrent** VMs). Sizes: small
   (2 vCPU/4 GB, 0.5×), default (4 vCPU/8 GB, 1×), large (8 vCPU/16 GB, 2×).
-  **Stopped = snapshotted, billing paused**, resume in seconds. 100–1,500
+  **Stopped = snapshotted (snapshots free), billing paused**, resume in seconds —
+  but resume does NOT restore running processes or in-memory state (vendor:
+  that would be expensive and cause time-slip bugs; their recommendation is
+  **systemd services**, exactly what this kit already runs). 100–2,000
   active boxes per account; default TTL 1 h, overrideable.
-* **Preinstalled:** Docker, VS Code, Chrome, Ghostty, GH CLI, Rust, Node, Bun.
-  `box new / ssh / scp / prompt / fork / stop / desktop / list`, plus HTTP API
-  + Python/TS SDKs and `--json` JSONL output for programmatic use. Bring any
-  agent: Claude Code, Codex, OpenCode.
+* **Preinstalled:** Docker, VS Code, Chrome (scraping-ready), Ghostty, GH CLI,
+  Rust, Node, Bun, plus agent harnesses. `box new / ssh / scp / prompt / fork
+  / stop / desktop / list`, plus HTTP API + Python/TS SDKs and `--json` JSONL
+  output. **Desktop** via Moonlight by default, VNC with `box desktop --vnc`.
+  Bring any agent: Claude Code, Codex, OpenCode.
 * Docs are clean markdown with an `llms.txt` index (a pattern copied in this
   repo's own `docs/llms.txt`).
 

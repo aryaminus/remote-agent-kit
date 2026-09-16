@@ -37,7 +37,7 @@ don't own the data.
 |---|---|---|
 | Hetzner cx33 (this default) | ~€9.99/mo fixed | Predictable always-on, full control |
 | [exe.dev](https://exe.dev/vps) Personal | $20/mo pool (50 VMs, 100 GB disk) | Private HTTPS sharing + zero TLS work; many small VMs, one bill |
-| [box.ascii.dev](https://box.ascii.dev) | $20 minimum → ~555 h of 4 vCPU/8 GB, per-second, pause-when-stopped | Bursty use, one VM per agent, fork-as-branching |
+| [box.ascii.dev](https://box.ascii.dev) | $20 minimum → ~555 h of 4 vCPU/8 GB, per-second, pause-when-stopped (resume loses running processes — their own advice is systemd) | Bursty use, one VM per agent, fork-as-branching |
 
 Full analysis: `alternatives.md`.
 
