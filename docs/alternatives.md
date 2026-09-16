@@ -3,13 +3,13 @@
 This repo provisions **Hetzner** by default, but the Ansible layer is
 provider-agnostic: anything that is **Ubuntu 24.04 x86_64 with SSH + sudo**
 can be configured with `make deploy`. Terraform is the only Hetzner-specific
-part — skip `make apply`, point `ansible/inventory/hosts.yml` at your own box,
+part — skip `make apply`, point `ansible/inventory/hosts.yml` at your own server,
 and carry on.
 
 Evaluated 2026-09-15 against [exe.dev](https://exe.dev),
-[Vercel Eve](https://vercel.com/eve), and [box by ASCII](https://box.ascii.dev).
+[Vercel Eve](https://vercel.com/eve), and [boat by ASCII](https://boat.dev).
 Prices/claims below are from their public pages on that date — re-check before
-committing, especially box's comparison page (their own numbers favor them).
+committing, especially boat's comparison page (their own numbers favor them).
 
 ## The short version
 
@@ -17,7 +17,7 @@ committing, especially box's comparison page (their own numbers favor them).
 |---|---|---|
 | Cheapest predictable always-on box, full control | Hetzner cx33 (default) | Nothing — `make apply && make deploy` |
 | Zero TLS/proxy work, private HTTPS links to share | [exe.dev](https://exe.dev/vps) VPS | Skip `make apply`; deploy Ansible onto your exe.dev VM (below) |
-| Per-second billing, one VM per agent, instant fork | [box.ascii.dev](https://box.ascii.dev) | Same: deploy Ansible onto a box, or use boxes *instead of* AoE containers |
+| Per-second billing, one VM per agent, instant fork | [boat](https://boat.dev) (renamed from box, Sep 2026 — §boat) | Same: deploy Ansible onto a boat, or use boats *instead of* AoE containers |
 | A framework to **build your own** agent (not run Hermes) | [Vercel Eve](https://vercel.com/eve) | Nothing here — different layer (see below) |
 
 ## exe.dev VPS — the "batteries included" VM
@@ -35,7 +35,7 @@ disposable sandboxes. The VPS-relevant bits:
   maintained `exeuntu` image tracking Ubuntu security updates, SSH-signed API
   (`ssh exe.dev new myblog` → ready in ~0.8 s).
 * **Pool pricing:** Personal $20/mo = 50 VMs sharing 100 GB disk; a stopped VM
-  keeps disk, releases CPU/RAM. One big box or fifty small ones, same bill.
+  keeps disk, releases CPU/RAM. One big vessel or fifty small ones, same bill.
 
 Using it with this kit:
 
@@ -59,36 +59,48 @@ bash pair.sh --url https://hermes.<you>.exe.xyz:8642   # must be https — the
 Keep Tailscale anyway if you want SSH without exe.dev in the path, or
 Perch-over-tailnet with no public surface at all.
 
-## box.ascii.dev — per-second agent VMs
+## boat — per-second agent VMs (§boat for the rename note)
 
 What it is: persistent Ubuntu VMs with SSH/SCP, Docker *inside*, dedicated
-IPv6/IPv4 per box, disk-level **fork**, 60 fps virtual desktop, EU regions
+IPv6/IPv4 per vessel, disk-level **fork**, 60 fps virtual desktop, EU regions
 (DE/FI/CZ→FR per their pages: Germany, Finland, France).
 
 * **Billing:** $20/mo account minimum → ~555 h of 4 vCPU/8 GB
-  box-time, billed by the second across one box or many (a recent
-  announcement quotes **$0.036/vm-hr for 8c/16GB/100GB** boxes, up to
+  boat-time, billed by the second across one vessel or many (a recent
+  announcement quotes **$0.036/vm-hr for 8c/16GB/100GB** vessels, up to
   **2,000 concurrent** VMs). Sizes: small
   (2 vCPU/4 GB, 0.5×), default (4 vCPU/8 GB, 1×), large (8 vCPU/16 GB, 2×).
   **Stopped = snapshotted (snapshots free), billing paused**, resume in seconds —
   but resume does NOT restore running processes or in-memory state (vendor:
   that would be expensive and cause time-slip bugs; their recommendation is
   **systemd services**, exactly what this kit already runs). 100–2,000
-  active boxes per account; default TTL 1 h, overrideable.
+  active vessels per account; default TTL 1 h, overrideable.
 * **Preinstalled:** Docker, VS Code, Chrome (scraping-ready), Ghostty, GH CLI,
-  Rust, Node, Bun, plus agent harnesses. `box new / ssh / scp / prompt / fork
+  Rust, Node, Bun, plus agent harnesses. `boat new / ssh / scp / prompt / fork
   / stop / desktop / list`, plus HTTP API + Python/TS SDKs and `--json` JSONL
-  output. **Desktop** via Moonlight by default, VNC with `box desktop --vnc`.
+  output. **Desktop** via Moonlight by default, VNC with `boat desktop --vnc`.
   Bring any agent: Claude Code, Codex, OpenCode.
 * Docs are clean markdown with an `llms.txt` index (a pattern copied in this
   repo's own `docs/llms.txt`).
 
-Two ways to use it with this kit:
+## §boat — the box → boat rename (2026-09-16)
 
-1. **As the always-on host** (Hetzner alternative): `box new`, then
-   `make deploy` with the box as `ansible_host`. Same 7 roles.
+[boat](https://boat.dev) ([docs](https://docs.boat.dev)) is the same product
+renamed for trademark reasons ("box" collided with a very large tech
+company) — not a pivot. Per the founder's announcement thread:
+
+* Same product, same numbers (their claims: 8–18× cheaper than leading
+  providers, >$2M/yr user savings, 40% faster than Daytona, 2.6× faster
+  than Modal, YC F26, ~$20 minimum, up to 2,000 concurrent vessels).
+* Old names/endpoints/CLI keep working **until 2026-10-31**, then you must
+  migrate to the new endpoints/names/CLI (an email went to existing users).
+* References in this repo now say **boat**; older commit messages still say
+  box — history, not a broken link.
+
+1. **As the always-on host** (Hetzner alternative): `boat new`, then
+   `make deploy` with the vessel as `ansible_host`. Same 7 roles.
 2. **As the agent factory** (AoE alternative): instead of containers on one
-   box, give each coding agent its own box and `box fork` to branch work —
+   box, give each coding agent its own vessel and `boat fork` to branch work —
    VM-level isolation instead of container-level. Better blast radius, ~$20
    minimum covers ~555 default-box hours. Worse for single-box simplicity;
    cross-box comms and per-box Hermes installs are your problem then.
