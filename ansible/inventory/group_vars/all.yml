@@ -31,6 +31,13 @@ model_provider: nous
 # re-fetch + update if the get_url checksum task ever fails).
 gh_keyring_sha256: 6084d5d7bd8e288441e0e94fc6275570895da18e6751f70f057485dc2d1a811b
 
+# Phone app as PWA (perch role): path to a local tarball of the exported
+# Perch web build. Empty = skip (native app or nothing). Build it with:
+#   cd apps/mobile && pnpm export:web && tar --exclude='*.map' -czf /tmp/perch-web.tgz dist
+perch_web_tarball: ""
+perch_web_port: 8091
+perch_web_serve_port: 8443
+
 # Messaging platform. telegram is the tested default; Hermes also speaks
 # discord, whatsapp and signal through the same gateway setup flow — set this
 # var and matching *_BOT_TOKEN / *_ALLOWED_USERS env to switch (see the
