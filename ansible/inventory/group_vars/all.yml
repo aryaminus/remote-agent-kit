@@ -27,6 +27,10 @@ hermes_dashboard_port: 9119
 # (no key stored). openrouter/anthropic need their key in .env.
 model_provider: nous
 
+# Verified 2026-09-16 (githubcli-archive-keyring.gpg, upstream rotation possible —
+# re-fetch + update if the get_url checksum task ever fails).
+gh_keyring_sha256: 6084d5d7bd8e288441e0e94fc6275570895da18e6751f70f057485dc2d1a811b
+
 # Messaging platform. telegram is the tested default; Hermes also speaks
 # discord, whatsapp and signal through the same gateway setup flow — set this
 # var and matching *_BOT_TOKEN / *_ALLOWED_USERS env to switch (see the
