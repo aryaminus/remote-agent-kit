@@ -41,6 +41,29 @@
     executable: /bin/bash
   when: aoe_check.rc != 0
 
+- name: Install the coding-agent CLIs AoE will drive
+  # Exact commands are the ones `aoe agents` itself suggests when a CLI is
+  # missing — kept in lockstep. AUTH IS THE USER'S STEP (browser/device flow
+  # per vendor); binaries are all that can be automated. Notes learned live:
+  #   - become_user has no login PATH: npm must be called by absolute path
+  #     (Hermes's node lives in ~/.local/bin, global prefix IS ~/.local)
+  #   - curl|bash needs shell+bash (command module split the pipe into args)
+  #   - opencode's installer puts the binary in ~/.opencode/bin, not ~/.local
+  # Antigravity is intentionally NOT auto-installed: its CLI ships via a
+  # Google script whose URL is not stable enough to pin — see docs/usage.md.
+  ansible.builtin.shell:
+    cmd: "{{ item.cmd }}"
+    executable: /bin/bash
+  args:
+    creates: "{{ item.creates }}"
+  become_user: "{{ admin_username }}"
+  become: true
+  loop:
+    - { cmd: 'export PATH="$HOME/.local/bin:$PATH"; npm install -g @anthropic-ai/claude-code', creates: '/home/{{ admin_username }}/.local/bin/claude' }
+    - { cmd: 'export PATH="$HOME/.local/bin:$PATH"; npm install -g @openai/codex', creates: '/home/{{ admin_username }}/.local/bin/codex' }
+    - { cmd: 'export PATH="$HOME/.local/bin:$PATH"; curl -fsSL https://opencode.ai/install | bash', creates: '/home/{{ admin_username }}/.opencode/bin/opencode' }
+  when: install_agent_clis | default(true)
+
 - name: Verify AoE sees the installed CLIs
   ansible.builtin.command: /usr/local/bin/aoe agents
   become_user: "{{ admin_username }}"
