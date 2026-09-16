@@ -129,6 +129,29 @@ fi
 # shellcheck disable=SC1091
 set -a; . ./.env; set +a
 
+# ── 2b. stable service credentials (generated ONCE, kept forever) ───
+# The gateway + dashboard read these at (re)start. Generating per-deploy
+# would rotate them out from under paired phones (a real dogfood lockout),
+# so they live in .env like any other secret and Ansible refuses to guess.
+rand43() { head -c 64 /dev/urandom | base64 | tr -d '/+=\n' | cut -c1-43; }
+rand32() { head -c 48 /dev/urandom | base64 | tr -d '/+=\n' | cut -c1-32; }
+ensure_secret() { # ensure_secret KEY GENERATOR_EXPR
+  if ! grep -q -E "^$1=.+" .env 2>/dev/null; then
+    touch .env; chmod 600 .env
+    grep -v -E "^$1=" .env > .env.tmp || true; mv .env.tmp .env
+    printf '%s=%s\n' "$1" "$(eval "$2")" >> .env
+    ok "$1 generated once into .env (kept forever — back it up, it pairs your phones)"
+  else
+    ok "$1 already set (kept)"
+  fi
+}
+ensure_secret API_SERVER_KEY 'printf "hp_%s" "$(rand43)"'
+ensure_secret HERMES_DASHBOARD_BASIC_AUTH_USERNAME 'printf admin'
+ensure_secret HERMES_DASHBOARD_BASIC_AUTH_PASSWORD 'rand32'
+ensure_secret HERMES_DASHBOARD_BASIC_AUTH_SECRET 'rand43'
+ensure_secret HERMES_DASHBOARD_SESSION_TOKEN 'rand43'
+set -a; . ./.env; set +a
+
 # ── 3. model ──────────────────────────────────────────────
 say "3/7 · Model (who does the thinking — billed by them, not by us)"
 if ! grep -q -E '^(OPENROUTER_API_KEY|ANTHROPIC_API_KEY)=.+' .env 2>/dev/null; then

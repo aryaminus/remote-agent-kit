@@ -1,0 +1,11 @@
+# Restart the gateway when its env changes (new key, new platform config).
+# Without this, the file and the running process silently disagree about
+# credentials — every client gets 401s and nothing on our side errors.
+- name: Restart gateway
+  ansible.builtin.systemd:
+    name: hermes-gateway
+    scope: user
+    state: restarted
+    daemon_reload: true
+  become_user: "{{ admin_username }}"
+  become: true

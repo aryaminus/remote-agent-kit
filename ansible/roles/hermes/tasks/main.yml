@@ -38,9 +38,15 @@
     modification_time: preserve
     access_time: preserve
 
-- name: Generate API_SERVER_KEY when not provided
-  ansible.builtin.set_fact:
-    api_server_key: "{{ lookup('env', 'API_SERVER_KEY') | default('hp_' + lookup('password', '/dev/null length=43 chars=ascii_letters,digits'), true) }}"
+- name: Require a STABLE API_SERVER_KEY (fail fast, never silently rotate)
+  # A generated-per-run key (e.g. lookup password /dev/null) changes the file
+  # on every deploy while the running gateway keeps the old one in memory —
+  # that locks out every client with no error on our side. The key must live
+  # in the operator's .env (scripts/start.sh generates it once). Refusing to
+  # guess is the entire fix for a real dogfood lockout.
+  ansible.builtin.fail:
+    msg: "API_SERVER_KEY is not set. Run scripts/start.sh (it generates one into .env) or add API_SERVER_KEY=hp_<43 chars> to .env yourself."
+  when: lookup('env', 'API_SERVER_KEY') | length == 0
   no_log: true
 
 - name: Write gateway server env (API for Perch + model keys)
@@ -54,10 +60,11 @@
     mode: "0600"
   loop:
     - { key: 'API_SERVER_ENABLED', value: 'true' }
-    - { key: 'API_SERVER_KEY', value: "{{ api_server_key }}" }
+    - { key: 'API_SERVER_KEY', value: "{{ lookup('env', 'API_SERVER_KEY') }}" }
     - { key: 'API_SERVER_HOST', value: '0.0.0.0' }
     - { key: 'API_SERVER_PORT', value: "{{ hermes_api_port }}" }
   no_log: true
+  notify: Restart gateway
 
 - name: Write model provider key when supplied
   ansible.builtin.lineinfile:
@@ -100,3 +107,10 @@
 - name: Remind where the API key lives
   ansible.builtin.debug:
     msg: "API_SERVER_KEY is set in ~/.hermes/.env on the server (0600). Fetch it over Tailscale for Perch pairing — it never appears in logs."
+
+- name: Flush handlers now (restart gateway before later roles can fail)
+  # Handlers normally run at play end — SKIPPED when the play fails. A later
+  # failed assert (e.g. missing dashboard secret) would then strand a new key
+  # in the file with the old one in memory = silent 401 lockout for everyone.
+  # Flushing here makes env changes live immediately. (Real dogfood lockout.)
+  ansible.builtin.meta: flush_handlers

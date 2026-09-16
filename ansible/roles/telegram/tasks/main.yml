@@ -21,6 +21,7 @@
     - { key: 'TELEGRAM_ALLOWED_USERS', value: "{{ lookup('env', 'TELEGRAM_ALLOWED_USERS') }}" }
   no_log: true
   when: lookup('env', 'TELEGRAM_BOT_TOKEN') | length > 0 and lookup('env', 'TELEGRAM_ALLOWED_USERS') | length > 0
+  notify: Restart gateway
 
 - name: Configure the gateway platform (writes config, starts nothing)
   ansible.builtin.command: "{{ hermes_bin }} gateway setup --platform {{ telegram_platform }}"
@@ -54,6 +55,9 @@
     state: started
   become_user: "{{ admin_username }}"
   become: true
+
+- name: Flush handlers now (a rotated bot token must be live before we declare health)
+  ansible.builtin.meta: flush_handlers
 
 - name: Wait for the gateway API to answer locally
   ansible.builtin.uri:
