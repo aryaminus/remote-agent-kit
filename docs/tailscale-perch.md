@@ -1,15 +1,20 @@
-# Tailscale + access (SSH, terminal, Telegram, Perch)
+# Phone + private network access (Tailscale, Telegram, Perch)
 
-## Four ways in — pick any, mix freely
+## The access matrix — Mac and phone are both thin clients
+
+Everything runs on the box. You never need the Mac open for agents to work;
+both the Mac terminal and the phone reach the same live system.
 
 | Method | What you get | What you install | Cost |
 |---|---|---|---|
-| **SSH** (Termius / Blink / plain `ssh`) | Full shell on the box | Tailscale app + any SSH client | $0 |
-| **Terminal multiplexers** (AoE TUI / Herdr / tmux) | Persistent agent sessions over that SSH | Same as SSH | $0 |
-| **Telegram bot** | Chat with the agent from any phone, no other app | Telegram only (bot polls out — needs nothing inbound) | $0 |
+| **Mac terminal → SSH** (zero apps beyond ssh) | Full shell on the box | Nothing extra if SSH is allowed from your IP; else Tailscale app | $0 |
+| **Mac terminal multiplexers** (AoE TUI / Herdr / tmux) | Persistent agent sessions over that SSH | Same as SSH | $0 |
+| **Telegram bot** (OFF unless configured) | Chat with the agent from any phone, no other app | Telegram only (bot polls out — needs nothing inbound) | $0 |
 | **Perch phone client** | Sessions, streaming, approvals, skills, cron | Perch + Tailscale app on the phone | $0 (open-source client) |
+| **Perch web PWA** (no store needed) | Same Perch screens in mobile Safari, Add to Home Screen | Tailscale app on the phone only | $0 |
 
-All four ride the same tailnet; none opens a public port.
+SSH stays usable with the Mac closed; the tailnet paths keep working from
+anywhere with the Tailscale app signed in.
 
 ## Tailscale costs $0 for this kit's shape
 
@@ -45,9 +50,10 @@ Default stays Tailscale: zero config, MagicDNS, and the Perch pairing flow
 
 ## Why Tailscale
 
-SSH, the API (8642) and the dashboard (9119) answer **only on the tailnet**
-(`100.64.0.0/10` + MagicDNS `hermes.<tailnet>.ts.net`). Scanners find nothing;
-your phone reaches everything from anywhere with the Tailscale app signed in.
+SSH (optional tailnet lock), the API (8642) and the dashboard (9119) answer
+on the tailnet (`100.64.0.0/10` + MagicDNS `<box>.<tailnet>.ts.net`).
+Scanners find nothing on those ports; your phone reaches everything from
+anywhere with the Tailscale app signed in.
 
 ## Pairing address: HTTPS name for iPhone, IP for the rest
 
@@ -66,7 +72,10 @@ fails loudly with the approval URL — approve and re-run.
    and browsers all route transparently). The Homebrew CLI in userspace mode
    reaches the control plane but does NOT route data without a TUN device.
    Linux: official `install.sh` + `tailscale up` is enough.
-2. `make ssh` (uses the tailnet once known) or bootstrap SSH to the public IP.
+   (Skip the laptop install if `lock_ssh_to_tailnet: false` — plain SSH then
+   works from an allowed IP; the phone still needs the app.)
+2. `make ssh` (uses the tailnet when locked, the public IP otherwise) or
+   bootstrap SSH to the public IP.
 3. On the server: `tailscale ip -4` → note `100.x.y.z`.
 4. `make pair` → follow the QR flow **on the server**. The pairing script is
    public — download-then-run, never piped (Perch's own rule: read it first):
@@ -111,7 +120,26 @@ https://aryaminus.github.io/perch-site/<name> -o <name> && bash <name>`):
   trusted room, never screenshot into a chat.
 * Dashboard token is pinned (`HERMES_DASHBOARD_SESSION_TOKEN`) — pairing
   survives restarts. If you pair before the fix role ran, re-pair after.
-* Web build users: set `PERCH_WEB_ORIGIN` (exact origin) so the deploy writes
-  `API_SERVER_CORS_ORIGINS`. Native apps need nothing.
+* Web build users: `PERCH_WEB_ORIGIN` is for a web build you host
+  YOURSELF elsewhere (exact origin → deploy writes
+  `API_SERVER_CORS_ORIGINS`). The box-hosted PWA above is same-origin and
+  needs nothing. Native apps need nothing.
+## Perch web PWA — no store, no TestFlight (verified live)
+
+When no native build is installable, the phone app ships as the exported
+web build served from the box itself: a python static server on loopback
+(`perch-web.service`) fronted by `tailscale serve` on 8443 with the
+tailnet's TLS cert (SNI, iOS-clean).
+
+On the phone: Tailscale app signed in → Safari
+`https://<box>.<tailnet>.ts.net:8443/` → Share → **Add to Home Screen** →
+open it → *Enter details instead* with the `https://` address + key.
+
+PWA limits (from Perch's own docs): credentials live in the tab's memory
+(not the keychain), notifications only while open. Opt-in via
+`perch_web_tarball` (empty = skip). The native app needs nothing extra —
+and needs no `PERCH_WEB_ORIGIN`/CORS, because same-origin on the box is
+the web path this kit documents.
+
 * Locked out? Hetzner console → web console (VNC) → `tailscale status`,
   revert `/etc/ssh/sshd_config` `ListenAddress` lines, `systemctl restart ssh`.

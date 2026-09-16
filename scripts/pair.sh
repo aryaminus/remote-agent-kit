@@ -28,7 +28,7 @@ except Exception:
 fi
 echo "2) SSH to the server and run the public pairing script there:"
 echo
-echo "     ssh hermes@${HOST}"
+echo "     ssh $(grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $2}' || echo agentbox)@${HOST}"
 echo "     curl -fsSL https://aryaminus.github.io/perch-site/pair.sh -o pair.sh"
 echo "     bash pair.sh --tailscale"
 echo
@@ -37,4 +37,4 @@ echo "3) Scan the QR with Perch → 'Scan to connect'."
 echo
 echo "Telegram test instead:"
 echo "  Open your bot in Telegram and send: hello"
-echo "  Debug: ssh hermes@${HOST} 'journalctl --user -u hermes-gateway -n 100'"
+echo "  Debug: ssh $(grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $2}' || echo agentbox)@${HOST} 'journalctl --user -u hermes-gateway -n 100'"

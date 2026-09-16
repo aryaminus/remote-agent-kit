@@ -6,6 +6,8 @@
 # Which roles run (toggle features here):
 enable_tailscale: true
 enable_hermes: true
+# Telegram is OFF unless credentials exist: the role skips cleanly without
+# TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USERS (gateway still starts for API).
 enable_telegram: true
 enable_perch_api: true
 enable_aoe: true
@@ -13,8 +15,16 @@ enable_aoe: true
 # see docs/alternatives.md). Install-only; default off.
 enable_herdr: false
 enable_backups: true
+# Coding-agent CLIs (claude/codex/opencode/cmd) + their model keys.
+# Binaries only — auth stays yours (browser/device flow per vendor).
+install_agent_clis: true
 
-admin_username: hermes
+# ── Box identity (NOT brand-tied). Rename freely — nothing here depends on
+# hermes/perch/agent-kit in the name. Tailscale hostname becomes
+# <agent_hostname>.<tailnet>.ts.net; the OS user and all paths follow
+# admin_username. Defaults keep a recognizable, product-neutral box name.
+agent_hostname: agentbox
+admin_username: agentbox
 
 # Hermes versions — pin for reproducibility, bump deliberately.
 hermes_installer_url: https://hermes-agent.nousresearch.com/install.sh
@@ -44,12 +54,11 @@ perch_web_serve_port: 8443
 # gateway docs for per-platform variable names before relying on it).
 telegram_platform: telegram
 
-# Tailscale
-tailscale_hostname: hermes
+# Tailscale (hostname comes from agent_hostname above)
 tailscale_extra_args: ""   # e.g. "--advertise-tags=tag:server"
 
 # Backups
-backup_dir: /home/hermes/backups
+backup_dir: /home/{{ admin_username }}/backups
 backup_retention_days: 14
 # age public key for encrypted backups. Empty = plain tarballs (still off-box via rsync).
 age_public_key: ""

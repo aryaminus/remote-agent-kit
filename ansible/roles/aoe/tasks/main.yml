@@ -123,13 +123,16 @@
     group: "{{ admin_username }}"
 
 - name: Box git identity (agent commits land under this name/email)
+  # user.name is intentionally product-neutral; user.email comes from the
+  # operator's GIT_AUTHOR_EMAIL (default below). A commit email is public
+  # metadata on push — prefer a GitHub noreply address for a public repo.
   ansible.builtin.command:
     cmd: git config --global {{ item.key }} "{{ item.value }}"
   become_user: "{{ admin_username }}"
   become: true
   loop:
-    - { key: 'user.name', value: 'hermes-agent' }
-    - { key: 'user.email', value: 'sunim.54@gmail.com' }
+    - { key: 'user.name', value: "{{ git_user_name | default('agentbox') }}" }
+    - { key: 'user.email', value: "{{ lookup('env', 'GIT_AUTHOR_EMAIL') | default('agentbox@localhost', true) }}" }
     - { key: 'init.defaultBranch', value: 'main' }
     - { key: 'pull.rebase', value: 'false' }
   changed_when: false

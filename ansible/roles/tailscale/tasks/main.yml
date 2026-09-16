@@ -24,7 +24,7 @@
   ansible.builtin.command:
     cmd: >-
       tailscale up --authkey={{ lookup('env', 'TAILSCALE_AUTHKEY') }}
-      --hostname={{ tailscale_hostname }} --operator={{ admin_username }} {{ tailscale_extra_args }}
+      --hostname={{ agent_hostname }} --operator={{ admin_username }} {{ tailscale_extra_args }}
   register: ts_up
   changed_when: "'already' not in (ts_up.stderr | lower)"
   failed_when: ts_up.rc != 0 and 'already' not in (ts_up.stderr | lower)
@@ -37,7 +37,7 @@
 
 - name: Show the tailnet address
   ansible.builtin.debug:
-    msg: "Tailnet IPv4 is {{ ts_ip.stdout }} — MagicDNS: {{ tailscale_hostname }}.<tailnet>.ts.net"
+    msg: "Tailnet IPv4 is {{ ts_ip.stdout }} — MagicDNS: {{ agent_hostname }}.<tailnet>.ts.net"
 
 - name: Verify SSH answers on the tailnet IP before locking down
   ansible.builtin.wait_for:

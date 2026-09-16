@@ -4,10 +4,12 @@ variable "hcloud_token" {
   sensitive   = true
 }
 
+# Box identity is product-neutral by default: agentbox everywhere
+# (server, OS user, tailnet host). Matches ansible agent_hostname/admin_username.
 variable "server_name" {
   description = "Hetzner server name."
   type        = string
-  default     = "hermes"
+  default     = "agentbox"
 }
 
 # Verified 2026-09-16 via Hetzner API (fsn1, gross): cpx21 is listed but
@@ -42,7 +44,7 @@ variable "ssh_public_key" {
 variable "admin_username" {
   description = "Non-root operator user created by cloud-init."
   type        = string
-  default     = "hermes"
+  default     = "agentbox"
 }
 
 variable "my_ip" {

@@ -1,18 +1,22 @@
 # Using your agent — the daily driver's guide
 
-You now own a small cloud with a brain on it. Three surfaces reach it,
-plus a workshop of coding agents underneath. Nothing here opens a port
-to the internet.
+Everything runs on the box; your Mac and phone are thin clients. Close the
+lid, pocket the phone — agents keep working. Public SSH (key-only, your IP)
+is the laptop's door; the tailnet is the phone's; the gateway API never
+faces the public internet.
 
 ## 1. From your laptop terminal (zero apps beyond ssh)
 
 The one-time setup on your Mac (already done on the owner's machine):
 
 ```bash
-# ~/.ssh/config — 'agent' auto-attaches a persistent tmux on the box:
-Host hermes agent
-    HostName hermes.<your-tailnet>.ts.net
-    User hermes
+# ~/.ssh/config — plain direct door + auto-tmux interactive door:
+Host hermes-x
+    HostName <box-ip>
+    User <box-user>
+Host agent
+    HostName <box-ip>
+    User <box-user>
     RemoteCommand tmux attach-session -t main 2>/dev/null || tmux new-session -A -s main
     RequestTTY yes
 ```
@@ -28,36 +32,41 @@ On the box you have, in order of power:
 | Command | What you get |
 |---|---|
 | `hermes` | **The agent itself**, full interactive terminal REPL — chat, tools, skills, memory. This is the same brain Perch talks to. |
-| `aoe` | The coding-agent workshop (below). |
+| `aoe` | The coding-agent workshop (§3). |
 | `tmux` | Anything long-running; detach with `Ctrl+b d`, reattach next login. |
 | `journalctl --user -u hermes-gateway -f` | Watch the agent think (what Perch/Telegram rides on). |
 
-**One-shot questions without SSH:**
+**One-shot questions without an SSH session:**
 
 ```bash
 ./scripts/ask.sh "what did you do today?"
 ```
 
-Creates/reuses a `terminal` session on the gateway and prints just the
-reply. Warp users: an `agent-ask` workflow ships in this section's setup —
+Runs the whole request *inside* the box over SSH and prints just the reply
+— your Mac needs no VPN and never holds the API key in memory beyond the
+command. Warp users: an `agent-ask` workflow ships in this section's setup —
 type `agent-ask <question>` anywhere. (Suggested `~/.warp/workflows/`:
 `agent` → `ssh agent`, `agent-ask`, `agent-doctor`, `agent-logs`.)
 
-Talking to the agent **from your Mac without SSH** — the API is your gateway,
-key in `.env` (`API_SERVER_KEY`):
+Talking to the API **directly from your Mac** needs the tailnet (Tailscale
+on the laptop) — the API is deliberately unreachable otherwise. Key in
+`.env` (`API_SERVER_KEY`):
 
 ```bash
 curl -H "Authorization: Bearer $API_SERVER_KEY" \
      -H 'Content-Type: application/json' \
      -d '{"message":"status report: what did you do today?"}' \
-     https://hermes.<your-tailnet>.ts.net/api/sessions/<id>/chat
+     https://<box>.<your-tailnet>.ts.net/api/sessions/<id>/chat
 ```
 
 ## 2. From your phone
 
-- **Perch**: sessions, streaming, approvals, skills, cron — the polished path
-  (`pair.sh --tailscale` QR, one time).
-- **Telegram** (optional): message the bot; allow-listed to your numeric id.
+- **Perch native**: sessions, streaming, approvals, skills, cron — the polished
+  path (`pair.sh --tailscale` QR, one time). Needs the Tailscale app signed in.
+- **Perch web PWA** (no store/TestFlight needed): same screens from this box
+  — see "Perch web PWA" in `tailscale-perch.md`. Needs the Tailscale app only.
+- **Telegram** (OFF unless configured): message the bot; allow-listed to your
+  numeric id. Needs nothing but Telegram itself.
 
 ## 3. The coding-agent workshop (AoE)
 
@@ -69,6 +78,7 @@ aoe                     # TUI dashboard
 aoe add --cmd claude    # a Claude Code session
 aoe add --cmd codex     # OpenAI Codex
 aoe add --cmd opencode  # OpenCode
+aoe add --cmd cmd       # CommandCode
 aoe agents              # what's detected
 ```
 
@@ -84,29 +94,37 @@ your logins):**
 | Z.AI/GLM via `opencode` | `ZAI_API_KEY` in `.env` → server env + `opencode auth login` → **Z.AI** provider → paste key once (writes `~/.local/share/opencode/auth.json`, 0600). Then `opencode run --model zai/<model> "do X"`. **Account reality, verified live:** if the call fails with *"Insufficient balance or no resource package. Please recharge"* the wiring is proven correct and the Z.AI account itself needs funds — top up at the Z.AI console. (Same free-tier boundary pattern as Codex: auth works, the meter is the vendor's.) |
 | Antigravity | not auto-installed (Google's script URL isn't pinnable); see their docs, then AoE detects it |
 
-Agent subscriptions are billed by their vendors — separate from the €9.99
+Agent subscriptions are billed by their vendors — separate from the ~€9.99
 box and the free-tier Nous model your Hermes brain uses.
+
+**OpenCode Zen + free models (verified live):** Zen's own auth accepts a
+key, but its default endpoint may answer *"no tool-capable endpoint"* —
+always pass an explicit model (`--model openrouter/<free-id>`,
+`--model opencode/<id>`, or `--model zai/<id>` with `ZAI_API_KEY`).
+`ZAI_API_KEY` → server env + one `opencode auth login` → Z.AI paste —
+needs account funds ("Insufficient balance" = wiring proven, wallet empty).
 
 ## How it all fits together
 
 ```
-                 internet (outbound only — nothing dials IN)
+     public internet  (only SSH:22, key-only, edge-firewalled to your IP)
                               │
  ┌────────────────────────────┴─────────────────────────────┐
- │ Hetzner cx33 · Ubuntu 24.04 · UFW: no public ports      │
+ │ <box> · Ubuntu 24.04 · UFW deny-by-default               │
  │                                                          │
- │  Tailscale ── WireGuard mesh ──────────────────────────┐│
- │   ├── SSH (22, tailnet-only)      you ↔ box, private   ││
- │   └── serve 443 → gateway API     valid TLS, tailnet    ││
- │                                                          ││
- │  hermes-gateway (systemd) ◄── the brain: Nous model,    ││
- │   ├── API :8642  ← Perch / curl / Telegram polling      ││
- │   └── dashboard :9119 (basic-auth)                      ││
- │                                                          ││
- │  AoE + Docker ── claude/codex/opencode sandboxes        ││
- │  backups cron + Hetzner snapshots ── the undo buttons   ││
+ │  sshd (public, your IP) ───── you ↔ box, thin clients    │
+ │  Tailscale ── WireGuard mesh ──────────────────────────┐ │
+ │   └── serve 443 → gateway API     valid TLS, tailnet   │ │
+ │   └── serve 8443 → phone web app  valid TLS, tailnet   │ │
+ │                                                          │ │
+ │  hermes-gateway (systemd) ◄── the brain: Nous model,    │ │
+ │   ├── API :8642  ← Perch / curl / Telegram polling      │ │
+ │   └── dashboard :9119 (basic-auth)                      │ │
+ │                                                          │ │
+ │  AoE + Docker ── claude/codex/opencode/cmd sandboxes    │ │
+ │  backups cron + Hetzner snapshots ── the undo buttons   │ │
  └──────────────────────────────────────────────────────────┘
-        your Mac / phone ── tailnet ── everything above
+        your Mac (SSH) / phone (tailnet) ── same live system
 ```
 
 - **The brain** (Hermes + Nous model) is your always-on assistant — phone,

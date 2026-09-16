@@ -5,6 +5,8 @@ export
 
 TF := terraform -chdir=terraform
 ANS := ansible-playbook -i ansible/inventory/hosts.yml ansible/playbook.yml
+# Box login user follows inventory (default agentbox) — one place to rename.
+INV_USER := $(shell grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $$2}' || echo agentbox)
 
 .PHONY: help init plan apply deploy pair ssh doctor backup logs teardown check
 
@@ -38,19 +40,19 @@ pair: ## print pairing info (Perch QR via server script + Telegram test)
 	./scripts/pair.sh
 
 ssh: ## ssh to the box over Tailscale (no public port needed)
-	ssh hermes@$$(terraform -chdir=terraform output -raw tailscale_hint 2>/dev/null || echo '<server-ip — see terraform output>')
+	ssh $(INV_USER)@$$(terraform -chdir=terraform output -raw tailscale_hint 2>/dev/null || echo '<server-ip — see terraform output>')
 
 doctor: ## 7-point health check against the live box
 	./scripts/doctor.sh
 
-backup: ## snapshot reminder + pull a hermes-data tarball
+backup: ## snapshot reminder + pull an agent-data tarball
 	./scripts/backup.sh
 
 rollback: ## restore ~/.hermes on the server from a local backup (asks first)
 	./scripts/rollback.sh $(FILE)
 
 logs: ## follow the gateway journal on the server
-	ssh hermes@$$(terraform -chdir=terraform output -raw server_ipv4 2>/dev/null) \
+	ssh $(INV_USER)@$$(terraform -chdir=terraform output -raw server_ipv4 2>/dev/null) \
 	  'journalctl --user -u hermes-gateway -f'
 
 teardown: ## DESTROYS the VPS (asks first). Snapshots survive if kept.
