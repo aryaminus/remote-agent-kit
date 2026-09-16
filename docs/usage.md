@@ -1,0 +1,104 @@
+# Using your agent — the daily driver's guide
+
+You now own a small cloud with a brain on it. Three surfaces reach it,
+plus a workshop of coding agents underneath. Nothing here opens a port
+to the internet.
+
+## 1. From your laptop terminal (zero apps beyond ssh)
+
+```bash
+ssh hermes@hermes.<your-tailnet>.ts.net   # MagicDNS name = your tailnet
+```
+
+(Tailscale running on the Mac is the only requirement — the App Store app.)
+
+On the box you have, in order of power:
+
+| Command | What you get |
+|---|---|
+| `hermes` | **The agent itself**, full interactive terminal REPL — chat, tools, skills, memory. This is the same brain Perch talks to. |
+| `aoe` | The coding-agent workshop (below). |
+| `tmux` | Anything long-running; detach with `Ctrl+b d`, reattach next login. |
+| `journalctl --user -u hermes-gateway -f` | Watch the agent think (what Perch/Telegram rides on). |
+
+Talking to the agent **from your Mac without SSH** — the API is your gateway,
+key in `.env` (`API_SERVER_KEY`):
+
+```bash
+curl -H "Authorization: Bearer $API_SERVER_KEY" \
+     -H 'Content-Type: application/json' \
+     -d '{"message":"status report: what did you do today?"}' \
+     https://hermes.<your-tailnet>.ts.net/api/sessions/<id>/chat
+```
+
+## 2. From your phone
+
+- **Perch**: sessions, streaming, approvals, skills, cron — the polished path
+  (`pair.sh --tailscale` QR, one time).
+- **Telegram** (optional): message the bot; allow-listed to your numeric id.
+
+## 3. The coding-agent workshop (AoE)
+
+`ssh` in, run `aoe`. Each session = own `tmux` + git worktree, optionally
+Docker-sandboxed; survives disconnects; web dashboard via `aoe serve`.
+
+```bash
+aoe                     # TUI dashboard
+aoe add --cmd claude    # a Claude Code session
+aoe add --cmd codex     # OpenAI Codex
+aoe add --cmd opencode  # OpenCode
+aoe agents              # what's detected
+```
+
+**One-time auth per CLI (yours, browser-based — we install binaries, never
+your logins):**
+
+| CLI | Auth |
+|---|---|
+| `claude` | run once → Anthropic OAuth link (needs Claude sub) |
+| `codex` | run once → ChatGPT login link |
+| `opencode` | `opencode auth login` → pick provider(s) |
+| Antigravity | not auto-installed (Google's script URL isn't pinnable); see their docs, then AoE detects it |
+
+Agent subscriptions are billed by their vendors — separate from the €9.99
+box and the free-tier Nous model your Hermes brain uses.
+
+## How it all fits together
+
+```
+                 internet (outbound only — nothing dials IN)
+                              │
+ ┌────────────────────────────┴─────────────────────────────┐
+ │ Hetzner cx33 · Ubuntu 24.04 · UFW: no public ports      │
+ │                                                          │
+ │  Tailscale ── WireGuard mesh ──────────────────────────┐│
+ │   ├── SSH (22, tailnet-only)      you ↔ box, private   ││
+ │   └── serve 443 → gateway API     valid TLS, tailnet    ││
+ │                                                          ││
+ │  hermes-gateway (systemd) ◄── the brain: Nous model,    ││
+ │   ├── API :8642  ← Perch / curl / Telegram polling      ││
+ │   └── dashboard :9119 (basic-auth)                      ││
+ │                                                          ││
+ │  AoE + Docker ── claude/codex/opencode sandboxes        ││
+ │  backups cron + Hetzner snapshots ── the undo buttons   ││
+ └──────────────────────────────────────────────────────────┘
+        your Mac / phone ── tailnet ── everything above
+```
+
+- **The brain** (Hermes + Nous model) is your always-on assistant — phone,
+  terminal, API. Free tier today; swap models with `hermes model`.
+- **The hands** (coding agents under AoE) are separate tools with their own
+  auth and billing — you drive them deliberately, sandboxed.
+- **The rules**: secrets live in `.env` files at 0600, never in git; the
+  pairing QR *is* the API key; `make doctor` is the heartbeat;
+  `make rollback` + snapshots are the undo.
+
+## Daily cheat sheet
+
+```bash
+make ssh        # straight onto the box (from the repo)
+make doctor     # 7-point health, logged
+make logs       # follow the gateway journal
+make backup     # pull the newest tarball off-box
+make pair       # phone pairing instructions + your HTTPS address
+```

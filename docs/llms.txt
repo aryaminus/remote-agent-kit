@@ -18,6 +18,7 @@
 - docs/adr/0002-terraform-ansible.md — why this automation split (Gall's Law)
 - docs/telegram-setup.md — BotFather + allow-list walkthrough (5 min)
 - docs/tailscale-perch.md — access matrix (SSH/terminal/Telegram/Perch), Tailscale $0 facts + alternatives, pairing, lockout recovery
+- docs/usage.md — THE daily driver's guide: terminal/phone/AoE workshop, per-CLI auth, architecture map, cheat sheet
 
 ## Operate
 

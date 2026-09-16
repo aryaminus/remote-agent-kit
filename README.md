@@ -125,4 +125,6 @@ repo_check), `paras200/hermes-anywhere` (Makefile ops, multi-cloud layout),
 `hermes-recipes/cheap-vps` reboot-survival notes. Perch pairing flow mirrors
 `scripts/pair.sh` from the Perch repo.
 
+Security: [SECURITY.md](SECURITY.md) — trust model + how to audit a clone.
+
 License: [MIT](LICENSE).
