@@ -1,4 +1,47 @@
-# Tailscale + Perch pairing
+# Tailscale + access (SSH, terminal, Telegram, Perch)
+
+## Four ways in — pick any, mix freely
+
+| Method | What you get | What you install | Cost |
+|---|---|---|---|
+| **SSH** (Termius / Blink / plain `ssh`) | Full shell on the box | Tailscale app + any SSH client | $0 |
+| **Terminal multiplexers** (AoE TUI / Herdr / tmux) | Persistent agent sessions over that SSH | Same as SSH | $0 |
+| **Telegram bot** | Chat with the agent from any phone, no other app | Telegram only (bot polls out — needs nothing inbound) | $0 |
+| **Perch phone client** | Sessions, streaming, approvals, skills, cron | Perch + Tailscale app on the phone | $0 (open-source client) |
+
+All four ride the same tailnet; none opens a public port.
+
+## Tailscale costs $0 for this kit's shape
+
+Personal plan, **free forever** (pricing v4, April 2026): **≤6 users**,
+**unlimited devices**, MagicDNS, ACLs, Tailscale SSH, subnet routers, exit
+nodes. That covers a household/small-team agent box with enormous headroom
+(phones, laptops, tablets, the VPS, spares — devices are unlimited).
+You pay ($8/user/mo Standard) only past 6 users or for business features
+(SCIM/MDM). Personal = non-commercial use; a self-hosted agent box is
+exactly what it's for.
+
+## If Tailscale isn't for you
+
+No lock-in: the Ansible roles only assume "SSH reachable", so any of these
+replace the `tailscale` role with a `hosts.yml` change:
+
+* **Headscale** — self-hosted open-source Tailscale control server (free;
+  can run on this same box). Same WireGuard mesh, no Tailscale account.
+  Most work to run, most control. The natural exit if you outgrow Personal
+  or distrust the hosted control plane.
+* **ZeroTier** — same idea, free tier 25 nodes. Fewer knobs than Tailscale,
+  fine for one box + a few phones.
+* **Plain WireGuard** — free, no accounts, maximum manual config (keys,
+  peers, firewall per device). The honest fallback when you want zero
+  third parties and don't mind the toil.
+* **Cloudflare Tunnel** — free, no open ports, public HTTPS URLs. Trade:
+  traffic passes through Cloudflare's edge (account + trust required),
+  and SSH needs their client config. Best when you want public links,
+  worst when "no third party sees my bytes" matters.
+
+Default stays Tailscale: zero config, MagicDNS, and the Perch pairing flow
+(`pair.sh --tailscale`) assumes it.
 
 ## Why Tailscale
 

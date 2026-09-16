@@ -10,4 +10,5 @@
     - { role: telegram, tags: telegram, when: enable_telegram }
     - { role: perch, tags: perch, when: enable_perch_api }
     - { role: aoe, tags: aoe, when: enable_aoe }
+    - { role: herdr, tags: herdr, when: enable_herdr }
     - { role: backups, tags: backups, when: enable_backups }
