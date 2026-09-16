@@ -49,7 +49,17 @@ SSH, the API (8642) and the dashboard (9119) answer **only on the tailnet**
 (`100.64.0.0/10` + MagicDNS `hermes.<tailnet>.ts.net`). Scanners find nothing;
 your phone reaches everything from anywhere with the Tailscale app signed in.
 
-## First connection
+## Pairing address: HTTPS name for iPhone, IP for the rest
+
+iOS App Transport Security refuses cleartext HTTP to `100.x` (CGNAT is not
+"local" per ATS), so **iPhones must pair with the HTTPS MagicDNS name**:
+`https://<server-hostname>.<your-tailnet>.ts.net` (this kit serves the API
+there via `tailscale serve`, port 443, tailnet-only, Let's Encrypt cert —
+see the `tailscale` role). Android, Termius/SSH, and laptop dev contexts can
+use `http://100.x.y.z:8642` directly. `make pair` prints your exact HTTPS
+address when this machine is on the tailnet. Enabling Serve needs a one-time
+tailnet-admin approval (DNS → HTTPS certificates); without it the deploy
+fails loudly with the approval URL — approve and re-run.
 
 1. Install Tailscale on laptop + phone, same account as the auth key.
    macOS: use the **App Store app** (proper network interface — SSH, Termius,
