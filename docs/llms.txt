@@ -23,6 +23,8 @@
 
 - Makefile — every command (`make help`); deploy reads `.env`, never commits it
 - scripts/start.sh — THE easy button: deps, validated key prompts, writes config, plan approval, full run, resumable
+- scripts/finish.sh — completes the one-click box ON the server (Tailscale join, model, optional Telegram, services)
+- deploy/hetzner-cloud-init.yaml — one-click first-boot (no secrets inside, ever); pasted via #include
 - .env.example — all secrets with CHANGEME placeholders; copy to `.env`, chmod 600
 - scripts/preflight.sh — Murphy's gate: tools + filled secrets + SSH key, before money moves
 - scripts/doctor.sh — 7-point live health check (read-only); appends JSONL to logs/doctor.log

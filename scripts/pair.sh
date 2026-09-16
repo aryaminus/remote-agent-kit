@@ -15,9 +15,10 @@ echo "1) Make sure Tailscale is on this machine AND the phone (same tailnet)."
 echo "2) SSH to the server and run the public pairing script there:"
 echo
 echo "     ssh hermes@${HOST}"
-echo "     bash <(curl -fsSL https://raw.githubusercontent.com/aryaminus/perch-site/main/pair.sh) --tailscale"
+echo "     curl -fsSL https://aryaminus.github.io/perch-site/pair.sh -o pair.sh"
+echo "     bash pair.sh --tailscale"
 echo
-echo "   (the same script the Perch app docs point to; never fetch pairing tools elsewhere)."
+echo "   (download-then-run, never piped — the same script the Perch app docs point to.)"
 echo "3) Scan the QR with Perch → 'Scan to connect'."
 echo
 echo "Telegram test instead:"

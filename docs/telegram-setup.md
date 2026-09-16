@@ -1,4 +1,9 @@
-# Telegram setup (5 min)
+# Telegram setup (5 min, OPTIONAL)
+
+Skip this whole page if the Perch phone app is enough — the gateway API
+works without any bot. Both `./scripts/start.sh` and `bash ~/finish.sh`
+offer Telegram as an opt-in step, and the Ansible role skips cleanly when
+no token is set (re-run `--tags telegram` anytime to add it later).
 
 The gateway uses **polling**: it dials out to Telegram, so the firewall needs
 **no inbound ports** at all.
