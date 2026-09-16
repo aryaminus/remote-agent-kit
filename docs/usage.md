@@ -80,6 +80,7 @@ your logins):**
 | `claude` | **skipped for now** (owner's choice — needs Max/Pro sub or ANTHROPIC_API_KEY; add the key to `.env` and re-deploy to wire it) |
 | `codex` | ChatGPT device login — then note the **free-tier usage cap** (Plus boundary is real; `codex exec` reports it plainly) |
 | `opencode` | Any OpenRouter key (`OPENROUTER_API_KEY` in `.env` → server env, no prompt). Default Zen auth accepted the key, but its default endpoint can't run tools on some keys — pass an explicit model: `opencode run --model openrouter/anthropic/claude-sonnet-4 "do X"` (proven live) |
+| `cmd` (CommandCode) | `COMMANDCODE_API_KEY` in `.env` → server env; one paste into `cmd login` writes `~/.commandcode/auth.json`, then `cmd -p "do X"` runs headless (proven live: `COMMANDCODE-OK`) |
 | Antigravity | not auto-installed (Google's script URL isn't pinnable); see their docs, then AoE detects it |
 
 Agent subscriptions are billed by their vendors — separate from the €9.99
