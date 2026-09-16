@@ -14,3 +14,7 @@
     daemon_reload: true
   become_user: "{{ admin_username }}"
   become: true
+
+- name: Reload system systemd
+  ansible.builtin.systemd:
+    daemon_reload: true

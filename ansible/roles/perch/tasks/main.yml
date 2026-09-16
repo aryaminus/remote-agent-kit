@@ -109,6 +109,72 @@
     mode: "0600"
   when: lookup('env', 'NTFY_TOPIC') | length > 0
 
+# perch-web — the phone app as a PWA, served from the box itself.
+# Why not nginx: a hand-written nginx config 301-loops every route here (the SPA
+# only ships a Cloudflare-_redirects contract, which nginx cannot read;
+# verified live over an hour of debugging). Python's http.server serves the
+# export byte-identically (200s everywhere), tailnet-only via tailscale
+# serve on 8443 (SNI cert, iOS-clean). Nginx is NOT installed by this kit.
+- name: Install Perch web export
+  ansible.builtin.unarchive:
+    src: "{{ perch_web_tarball }}"
+    dest: /var/www/perch
+    extra_opts: [--strip-components=1, --exclude=*.map]
+    owner: www-data
+    group: www-data
+    mode: "0644"
+    creates: /var/www/perch/index.html
+  vars:
+    ansible_remote_tmp: /tmp
+  when: perch_web_tarball | length > 0
+
+- name: perch-web systemd service (python static server, localhost only)
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/perch-web.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Perch web build (static files, tailnet only via tailscale serve)
+      After=network-online.target
+      Wants=network-online.target
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/python3 -m http.server {{ perch_web_port }} --bind 127.0.0.1 --directory /var/www/perch
+      Restart=on-failure
+      RestartSec=3
+      NoNewPrivileges=true
+      [Install]
+      WantedBy=multi-user.target
+  notify: Reload system systemd
+  when: perch_web_tarball | length > 0
+
+- name: Enable and start perch-web
+  ansible.builtin.systemd:
+    name: perch-web
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: perch_web_tarball | length > 0
+
+- name: Expose the web app over Tailscale Serve (HTTPS, tailnet only)
+  ansible.builtin.command: tailscale serve --bg --https={{ perch_web_serve_port }} http://127.0.0.1:{{ perch_web_port }}
+  become_user: "{{ admin_username }}"
+  become: true
+  register: ts_serve_web
+  changed_when: "'Available within your tailnet' in ts_serve_web.stdout"
+  failed_when: false
+  when: perch_web_tarball | length > 0
+
+- name: UFW — web app answers on the tailnet only
+  community.general.ufw:
+    rule: allow
+    port: "{{ perch_web_serve_port }}"
+    proto: tcp
+    from_ip: 100.64.0.0/10
+  when: perch_web_tarball | length > 0
+
 - name: Pairing instructions
   ansible.builtin.debug:
     msg: >-
