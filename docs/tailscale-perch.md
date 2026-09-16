@@ -75,6 +75,13 @@ fails loudly with the approval URL — approve and re-run.
 5. In Perch: *Scan to connect*. No camera? *Enter details instead* with the
    printed address + key.
 
+## Automating the tap (Maestro/simulator)
+
+Tap the submit button **by testID** (`connect-submit`), never by the
+"Connect" text — a text tap lands on the big CONNECT title and completes
+without doing anything. (Perch's own committed flows already use testIDs;
+only ad-hoc scripts bite this.)
+
 ## After pairing — finish the Perch setup (all public scripts)
 
 Pairing connects the app; these three harden and complete it. Same
