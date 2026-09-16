@@ -9,6 +9,9 @@ enable_hermes: true
 enable_telegram: true
 enable_perch_api: true
 enable_aoe: true
+# Herdr is the terminal-first alternative to AoE (no sandboxing/web UI —
+# see docs/alternatives.md). Install-only; default off.
+enable_herdr: false
 enable_backups: true
 
 admin_username: hermes

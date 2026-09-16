@@ -109,6 +109,29 @@ but four ideas worth stealing, three of which this repo already follows:
    them, add a scored post-deploy probe (pairing handshake, approval
    round-trip) before calling a deploy green — same shape as an Eve eval.
 
+## Herdr vs AoE — the multi-agent layer (read before choosing)
+
+[Herdr](https://herdr.dev) ([38.8k★, Apache-2.0, Rust](https://github.com/herdrdev/herdr))
+is the heavyweight alternative to the Agent of Empires role this kit ships.
+Both keep coding agents alive across disconnects; they differ in philosophy:
+
+| | AoE (this kit's default) | Herdr |
+|---|---|---|
+| Community | ~2.7k★ | ~38.8k★, 875k+ installs, 1,133 plugins |
+| Persistence | `tmux` sessions (standard, attachable with plain tmux) | Own multiplexer + server; restores layout across **reboots**, resumes supported sessions |
+| Agent awareness | Status (running/waiting/idle/error) + diff viewer | Status (working/blocked/idle) + 22 CLIs auto-detected (**incl. Hermes**) |
+| Isolation | **Docker/Podman sandboxing per agent** + git worktrees | Panes + machines; no container sandbox story |
+| Remote/phone | **Web dashboard** over tailnet (Tailscale serve/Funnel) + mobile views | SSH-native multi-machine (`herdr machine add workbox` unifies laptop+VPS); no web UI |
+| Platforms | Linux/macOS (+WSL2) | macOS/Linux/Windows, one binary |
+
+Decision: **AoE stays default** — sandboxing plus a web dashboard is the
+right shape for an always-on box you also visit from your phone. **Herdr is
+the recommended switch for terminal-first operators**: install it
+(`curl -fsSL https://herdr.dev/install.sh | sh`, or set
+`enable_herdr: true` in `group_vars/all.yml` — the `herdr` role installs the
+binary idempotently), then run agents under `herdr` instead of `aoe`. Both
+can coexist; don't run the SAME checkout under both.
+
 ## Decision log (for this repo)
 
 * Default stays **Hetzner + Tailscale**: cheapest predictable always-on,

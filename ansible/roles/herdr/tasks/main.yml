@@ -1,0 +1,27 @@
+# herdr — optional session runtime for terminal-first operators.
+# Install-only and OFF by default (enable_herdr: false): AoE remains the
+# default multi-agent layer (sandboxing + web dashboard). Herdr (Apache-2.0,
+# one Rust binary) keeps agent terminals alive across disconnects AND machine
+# restarts, unifies laptop+VPS via `herdr machine add`, and auto-detects 22
+# CLIs including Hermes. See docs/alternatives.md "Herdr vs AoE" before
+# enabling — run the SAME checkout under herdr OR aoe, never both.
+- name: Check whether herdr is installed
+  ansible.builtin.command: /usr/local/bin/herdr --version
+  register: herdr_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Herdr (official installer, idempotent via creates guard)
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://herdr.dev/install.sh | sh
+    creates: /usr/local/bin/herdr
+  when: herdr_check.rc != 0
+
+- name: Verify the install
+  ansible.builtin.command: /usr/local/bin/herdr --version
+  register: herdr_version
+  changed_when: false
+
+- name: Show installed version
+  ansible.builtin.debug:
+    msg: "{{ herdr_version.stdout }} — run `herdr` over SSH, or `herdr machine add` from your laptop."
