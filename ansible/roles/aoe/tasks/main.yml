@@ -158,7 +158,8 @@
   # (0600) so every CLI inherits them. OpenCode is provider-agnostic and
   # reads OPENROUTER_API_KEY natively; codex reads OPENAI_API_KEY; claude
   # reads ANTHROPIC_API_KEY; command-code accepts COMMANDCODE_API_KEY for
-  # headless auth (falls back to `cmd login` device/browser flow).
+  # headless auth (falls back to `cmd login` device/browser flow); opencode
+  # reads ZAI_API_KEY for the Z.AI/GLM providers.
   # no_log keeps values out of logs.
   ansible.builtin.lineinfile:
     path: /home/{{ admin_username }}/.hermes/.env
@@ -172,6 +173,7 @@
     - { key: 'ANTHROPIC_API_KEY', value: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}" }
     - { key: 'OPENAI_API_KEY', value: "{{ lookup('env', 'OPENAI_API_KEY') }}" }
     - { key: 'COMMANDCODE_API_KEY', value: "{{ lookup('env', 'COMMANDCODE_API_KEY') }}" }
+    - { key: 'ZAI_API_KEY', value: "{{ lookup('env', 'ZAI_API_KEY') }}" }
   when: item.value | length > 0
   no_log: true
 

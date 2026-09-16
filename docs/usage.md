@@ -81,6 +81,7 @@ your logins):**
 | `codex` | ChatGPT device login — then note the **free-tier usage cap** (Plus boundary is real; `codex exec` reports it plainly) |
 | `opencode` | Any OpenRouter key (`OPENROUTER_API_KEY` in `.env` → server env, no prompt). Default Zen auth accepted the key, but its default endpoint can't run tools on some keys — pass an explicit model: `opencode run --model openrouter/anthropic/claude-sonnet-4 "do X"` (proven live) |
 | `cmd` (CommandCode) | `COMMANDCODE_API_KEY` in `.env` → server env; one paste into `cmd login` writes `~/.commandcode/auth.json`, then `cmd -p "do X"` runs headless (proven live: `COMMANDCODE-OK`) |
+| Z.AI/GLM via `opencode` | `ZAI_API_KEY` in `.env` → server env + `opencode auth login` → **Z.AI** provider → paste key once (writes `~/.local/share/opencode/auth.json`, 0600). Then `opencode run --model zai/<model> "do X"`. **Account reality, verified live:** if the call fails with *"Insufficient balance or no resource package. Please recharge"* the wiring is proven correct and the Z.AI account itself needs funds — top up at the Z.AI console. (Same free-tier boundary pattern as Codex: auth works, the meter is the vendor's.) |
 | Antigravity | not auto-installed (Google's script URL isn't pinnable); see their docs, then AoE detects it |
 
 Agent subscriptions are billed by their vendors — separate from the €9.99
