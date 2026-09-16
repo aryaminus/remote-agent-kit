@@ -18,7 +18,7 @@
   change, per the Law of Unintended Consequences.
 * Hetzner console — confirm the daily snapshot ran; tag `before-update` first.
 * Budget review (Goodhart's warning: watch the spend, not the gates): Hetzner
-  console usage + model provider dashboard. Expected ~€7.55 + $5–20; investigate
+  console usage + model provider dashboard. Expected ~€9.99 + $5–20; investigate
   drift before optimizing.
 * Updates: snapshot → `hermes backup` → `hermes update` → `hermes doctor` →
   `systemctl --user restart hermes-gateway hermes-dashboard`.

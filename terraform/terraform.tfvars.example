@@ -3,7 +3,7 @@
 
 hcloud_token = "CHANGEME-hetzner-cloud-api-token" # or export HCLOUD_TOKEN instead
 server_name  = "hermes"
-server_type  = "cpx21"  # x86 only — never cax* (ARM). See docs/costs.md.
+server_type  = "cx33"  # x86 only — never cax* (ARM). cpx21 is unorderable in fsn1. See docs/costs.md.
 image        = "ubuntu-24.04"
 location     = "fsn1"   # fsn1 | nbg1 | hel1 | ash | hil
 

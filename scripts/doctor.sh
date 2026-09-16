@@ -1,18 +1,28 @@
 #!/usr/bin/env bash
 # doctor.sh — 7-point health check against the live box. Read-only.
-# Usage: ./scripts/doctor.sh  (reads server IP from terraform output)
+# Prefers the tailnet address (post-deploy SSH is tailnet-only by design);
+# falls back to the terraform public IP for pre-lockdown boxes.
+# Usage: ./scripts/doctor.sh
 set -euo pipefail
 
-HOST="$(terraform -chdir=terraform output -raw server_ipv4 2>/dev/null || true)"
-[[ -n "$HOST" ]] || { echo "No terraform output. Run: make apply"; exit 2; }
-SSH="ssh -o BatchMode=yes hermes@${HOST}"
-TS="ssh hermes@${HOST} tailscale ip -4 2>/dev/null | head -1"
+# Server's tailnet IP from the LOCAL tailnet (hostname match, default hermes).
+# Learned the hard way: after lockdown, the public IP stops answering SSH,
+# and checks without a timeout hang for minutes instead of failing fast.
+TIP="$(tailscale status 2>/dev/null | awk '$2 == "hermes" {print $1; exit}' || true)"
+if [[ -n "$TIP" ]]; then
+  HOST="$TIP"
+  echo "remote-agent-kit · doctor (over tailnet $HOST)"
+else
+  HOST="$(terraform -chdir=terraform output -raw server_ipv4 2>/dev/null || true)"
+  [[ -n "$HOST" ]] || { echo "No terraform output. Run: make apply"; exit 2; }
+  echo "remote-agent-kit · doctor ($HOST — no tailnet route; install + sign in to Tailscale for tailnet checks)"
+fi
+SSH="ssh -o BatchMode=yes -o ConnectTimeout=10 hermes@${HOST}"
+TS="$SSH tailscale ip -4 2>/dev/null | head -1"
 
 pass=0; fail=0
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; pass=$((pass+1)); }
 bad()  { printf '  \033[31m✗\033[0m %s\n' "$1"; fail=$((fail+1)); }
-
-echo "remote-agent-kit · doctor ($HOST)"
 
 # Gilb's Law: what gets measured gets managed. Every run appends one JSONL
 # record (timestamp, host, per-check pass/fail, versions) to logs/doctor.log —

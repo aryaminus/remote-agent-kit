@@ -18,6 +18,9 @@ admin_username: hermes
 
 # Hermes versions — pin for reproducibility, bump deliberately.
 hermes_installer_url: https://hermes-agent.nousresearch.com/install.sh
+# The installer puts the CLI in ~/.local/bin (toolchain stays in ~/.hermes).
+# Verified against a live install — never assume ~/.hermes/bin.
+hermes_bin: /home/{{ admin_username }}/.local/bin/hermes
 hermes_api_port: 8642
 hermes_dashboard_port: 9119
 # Model wiring on the server. `nous` = OAuth via `hermes setup --portal`

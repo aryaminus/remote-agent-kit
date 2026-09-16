@@ -16,11 +16,17 @@
   become: true
 
 - name: Run the installer (skips interactive wizard on servers)
+  # async+poll (not fire-and-wait): the toolchain download takes 10-20 min on
+  # shared vCPU, and a dropped SSH session must never hang the deploy — each
+  # poll reconnects and re-checks the job. Learned the hard way on the first
+  # real dogfood (installer died silently, ansible waited forever).
   ansible.builtin.command:
     cmd: bash /tmp/hermes-install.sh --skip-setup
-    creates: /home/{{ admin_username }}/.hermes/bin/hermes
+    creates: "{{ hermes_bin }}"
   become_user: "{{ admin_username }}"
   become: true
+  async: 3600
+  poll: 30
 
 - name: Ensure gateway env file exists with safe permissions
   ansible.builtin.file:
@@ -85,7 +91,7 @@
     from_ip: 100.64.0.0/10
 
 - name: hermes doctor (fails the run if the install is broken)
-  ansible.builtin.command: /home/{{ admin_username }}/.hermes/bin/hermes doctor
+  ansible.builtin.command: "{{ hermes_bin }} doctor"
   become_user: "{{ admin_username }}"
   become: true
   register: doctor

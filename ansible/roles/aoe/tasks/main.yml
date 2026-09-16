@@ -19,19 +19,26 @@
   failed_when: false
 
 - name: Install AoE from the latest GitHub release
+  # Asset names verified 2026-09-16: aoe-linux-(amd64|arm64).tar.gz +
+  # .sha256 sidecar. ansible shell runs under dash — executable: bash is
+  # required (pipefail). Checksum enforced: a corrupt agent runner is worse
+  # than none.
   ansible.builtin.shell:
     cmd: |
       set -euo pipefail
       tag=$(curl -fsSL https://api.github.com/repos/agent-of-empires/agent-of-empires/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"])')
-      arch=$(uname -m | sed 's/x86_64/x86_64/;s/aarch64/arm64/')
+      arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
       tmp=$(mktemp -d)
-      curl -fsSL -o "$tmp/aoe.tar.gz" "https://github.com/agent-of-empires/agent-of-empires/releases/download/${tag}/aoe-${tag}-linux-${arch}.tar.gz" \
-        || curl -fsSL -o "$tmp/aoe" "https://github.com/agent-of-empires/agent-of-empires/releases/download/${tag}/aoe-linux-${arch}" \
-        || (echo "Could not fetch AoE ${tag} for linux-${arch}; install manually per https://github.com/agent-of-empires/agent-of-empires" && exit 1)
-      if [[ -f "$tmp/aoe.tar.gz" ]]; then tar -xzf "$tmp/aoe.tar.gz" -C "$tmp"; fi
-      install -m 0755 "$tmp/aoe"* /usr/local/bin/aoe
+      base="https://github.com/agent-of-empires/agent-of-empires/releases/download/${tag}/aoe-linux-${arch}"
+      file="aoe-linux-${arch}.tar.gz"
+      curl -fsSL -o "$tmp/$file" "$base.tar.gz"
+      curl -fsSL -o "$tmp/$file.sha256" "$base.tar.gz.sha256"
+      ( cd "$tmp" && sha256sum -c "$file.sha256" )
+      tar -xzf "$tmp/$file" -C "$tmp"
+      install -m 0755 "$tmp/aoe-linux-${arch}" /usr/local/bin/aoe
       rm -rf "$tmp"
     creates: /usr/local/bin/aoe
+    executable: /bin/bash
   when: aoe_check.rc != 0
 
 - name: Verify AoE sees the installed CLIs

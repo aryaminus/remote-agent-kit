@@ -21,7 +21,7 @@
     hour: "3"
     minute: "0"
     job: >-
-      /home/{{ admin_username }}/.hermes/bin/hermes backup >/dev/null 2>&1;
+      {{ hermes_bin }} backup >/dev/null 2>&1;
       f={{ backup_dir }}/agent-$(date +\%F).tar.gz;
       tar -czf "$f" -C /home/{{ admin_username }}/.hermes . >/dev/null 2>&1
       {% if age_public_key | length > 0 %}&& age -r {{ age_public_key }} -o "$f.age" "$f" && rm "$f"{% endif %};

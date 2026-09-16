@@ -76,6 +76,8 @@ for f in mine + glob.glob(".github/workflows/*.yml"):
                     # matches copy/template in short AND FQCN form
                     # (ansible.builtin.copy), which this repo uses throughout
                     return k in ("copy", "template") or k.endswith((".copy", ".template"))
+                def is_shell_module(k):
+                    return k in ("shell", "command") or k.endswith((".shell", ".command"))
                 if isinstance(node, dict):
                     for k, v in node.items():
                         if is_file_module(k) and isinstance(v, dict) and "src" in v:
@@ -85,7 +87,13 @@ for f in mine + glob.glob(".github/workflows/*.yml"):
                                          os.path.join(role_root, src)]
                                 if not any(os.path.exists(c) for c in cands):
                                     print(f"  ✗ {f}: src '{src}' resolves nowhere under {role_root}/"); globals()["bad"] = 1
-                        else:
+                        # ansible shell runs under dash: pipefail/[[]] need bash.
+                        # (Shipped once in the aoe role: "set: Illegal option -o pipefail".)
+                        if is_shell_module(k) and isinstance(v, dict):
+                            body = str(v.get("cmd", ""))
+                            if ("pipefail" in body or "[[" in body) and "executable" not in v:
+                                print(f"  ✗ {f}: shell task uses bashisms without executable: /bin/bash"); globals()["bad"] = 1
+                        if not (is_file_module(k) or is_shell_module(k)):
                             walk_tasks(v)
                 elif isinstance(node, list):
                     for item in node:

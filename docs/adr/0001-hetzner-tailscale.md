@@ -14,8 +14,8 @@ tools in isolation), and reachable from phone + laptop anywhere.
 2. **PaaS / serverless containers (Fly.io, Railway)** — fast deploy, scale to
    zero; but variable billing, less OS control, stateful multi-agent sessions
    are awkward (`tmux` + containers want a real box).
-3. **Hybrid: budget VPS + Tailscale mesh (chosen)** — Hetzner CPX21 x86 at
-   ~€7.55/mo with full root; Tailscale (WireGuard) makes the box a tailnet
+3. **Hybrid: budget VPS + Tailscale mesh (chosen)** — Hetzner cx33 x86 at
+   ~€9.99/mo with full root; Tailscale (WireGuard) makes the box a tailnet
    device, so SSH/API/dashboard answer privately with zero public ports and
    zero TLS to manage. Telegram polls out, so no inbound rules at all.
 

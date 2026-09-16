@@ -15,7 +15,7 @@ committing, especially box's comparison page (their own numbers favor them).
 
 | If you want… | Use | What changes in this repo |
 |---|---|---|
-| Cheapest predictable always-on box, full control | Hetzner CPX21 (default) | Nothing — `make apply && make deploy` |
+| Cheapest predictable always-on box, full control | Hetzner cx33 (default) | Nothing — `make apply && make deploy` |
 | Zero TLS/proxy work, private HTTPS links to share | [exe.dev](https://exe.dev/vps) VPS | Skip `make apply`; deploy Ansible onto your exe.dev VM (below) |
 | Per-second billing, one VM per agent, instant fork | [box.ascii.dev](https://box.ascii.dev) | Same: deploy Ansible onto a box, or use boxes *instead of* AoE containers |
 | A framework to **build your own** agent (not run Hermes) | [Vercel Eve](https://vercel.com/eve) | Nothing here — different layer (see below) |

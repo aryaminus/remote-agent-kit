@@ -4,7 +4,7 @@
 
 | What | Cost | Notes |
 |---|---|---|
-| **Hetzner VPS (the box)** | **~€7.55/mo CPX21** (~€3.79 CX22 fallback) | The only mandatory spend. Hourly billing — destroy anytime. |
+| **Hetzner VPS (the box)** | **~€9.99/mo cx33** (~€6.49 cx23 fallback) | The only mandatory spend. Hourly billing — destroy anytime. |
 | Hetzner snapshot | ~€0.50/mo (40 GB) | Optional but recommended; the one cheap insurance. |
 | **Tailscale** | **$0** | Personal plan, free forever: ≤6 users, **unlimited** devices, MagicDNS, ACLs, SSH. Paid ($8/user/mo) only past 6 users. |
 | **Telegram bot** | **$0** | Bot API free; polling uses negligible traffic. |
@@ -14,7 +14,7 @@
 | Model usage (the real variable) | $0–20/mo | NOT the box: Nous Portal free tier exists; OpenRouter free models work (+$10 one-time top-up lifts rate limits 50→1,000/day). Anthropic direct is pay-per-token. |
 | Domain name | $0 (not needed) | MagicDNS replaces it. Only if you want a public URL. |
 
-**Total mandatory: the box (~€7.55).** Realistic total with insurance + moderate
+**Total mandatory: the box (~€9.99).** Realistic total with insurance + moderate
 model use: **under ~$30/mo**. There is no relay, no SaaS seat, no per-message
 fee anywhere in this design — if a step ever asks for a credit card beyond
 Hetzner (and optionally your model provider), stop and re-read the docs.
@@ -23,8 +23,8 @@ Hetzner (and optionally your model provider), stop and re-read the docs.
 
 | Item | Price | Notes |
 |---|---|---|
-| VPS **CPX21** (3 vCPU / 4 GB / 80 GB, x86) | ~€7.55/mo | Default. Room for gateway + dashboard + 2–3 agents + browser tools. |
-| VPS **CX22** fallback (2 vCPU / 4 GB / 40 GB, x86) | ~€3.79/mo | Cheapest viable. Tight once browser/Playwright tasks run. |
+| VPS **cx33** (4 vCPU / 8 GB / 80 GB, x86) | ~€9.99/mo | Default. Room for gateway + dashboard + 2–3 agents + browser tools. |
+| VPS **cx23** fallback (2 vCPU / 4 GB / 40 GB, x86) | ~€6.49/mo | Cheapest viable. Tight once browser/Playwright tasks run. |
 | Snapshot | ~€0.012/GB/mo (~€0.50 for 40 GB) | Daily auto-snapshot recommended. |
 | Egress | 20 TB/mo free | Effectively unlimited for agents. |
 
@@ -35,7 +35,7 @@ don't own the data.
 
 | Option | Shape | When it wins |
 |---|---|---|
-| Hetzner CPX21 (this default) | ~€7.55/mo fixed | Predictable always-on, full control |
+| Hetzner cx33 (this default) | ~€9.99/mo fixed | Predictable always-on, full control |
 | [exe.dev](https://exe.dev/vps) Personal | $20/mo pool (50 VMs, 100 GB disk) | Private HTTPS sharing + zero TLS work; many small VMs, one bill |
 | [box.ascii.dev](https://box.ascii.dev) | $20 minimum → ~555 h of 4 vCPU/8 GB, per-second, pause-when-stopped | Bursty use, one VM per agent, fork-as-branching |
 

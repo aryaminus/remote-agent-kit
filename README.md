@@ -3,7 +3,7 @@
 **Your own always-on AI agent cloud — one command to deploy, yours to keep.**
 
 Provisions a hardened [Hetzner Cloud](https://www.hetzner.com/cloud) VPS
-(CPX21, x86, Ubuntu 24.04), joins it to your [Tailscale](https://tailscale.com)
+(cx33, x86, Ubuntu 24.04), joins it to your [Tailscale](https://tailscale.com)
 tailnet (no public SSH, no open ports), installs
 [Hermes Agent](https://github.com/NousResearch/hermes-agent) with a Telegram
 gateway, exposes the API + dashboard for the [Perch](https://aryaminus.github.io/perch-site/)
@@ -42,7 +42,7 @@ Terraform (terraform/)          Ansible (ansible/)                Phone / laptop
 [![Deploy to Hetzner Cloud](https://img.shields.io/badge/Deploy_to-Hetzner_Cloud-d50c2d)](https://console.hetzner.cloud)
 
 **Path A — one-click (no tools installed, ~20 min).** Click the button above,
-then Add Server: Ubuntu 24.04 · CPX21 (x86) · your region · your SSH key. At
+then Add Server: Ubuntu 24.04 · cx33 (x86) · your region · your SSH key. At
 the bottom, expand **Cloud config** and paste exactly this (it pulls the
 current setup from this repo — never rots, contains zero secrets):
 
@@ -80,7 +80,7 @@ destroys). Manual path (same steps the wizard runs): `make init`,
 `make preflight`, `make plan`, `make apply`, `make deploy`, `make doctor`.
 
 Day to day: `make ssh`, `make logs`, `make backup`. Full lifecycle in
-`docs/ops-runbook.md`. Costs in `docs/costs.md` (~€7.55/mo VPS + $5–20/mo model
+`docs/ops-runbook.md`. Costs in `docs/costs.md` (~€9.99/mo VPS + $5–20/mo model
 usage). Other hosts evaluated in `docs/alternatives.md` (exe.dev, box, Eve);
 agent-readable repo index in `docs/llms.txt`.
 
