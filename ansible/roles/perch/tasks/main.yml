@@ -2,6 +2,28 @@
 # 1. Dashboard on 9119 (tailnet-only) as a user systemd service, with a PINNED
 #    session token (unpinned tokens regenerate every restart and silently unpair).
 # 2. perch-approvals hook plugin so approvals reach ntfy (P1.19 bridge).
+- name: Generate dashboard basic-auth password when not provided
+  ansible.builtin.set_fact:
+    dash_user: "{{ lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_USERNAME') | default('admin', true) }}"
+    dash_pass: "{{ lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_PASSWORD') | default(lookup('password', '/dev/null length=32 chars=ascii_letters,digits'), true) }}"
+    dash_secret: "{{ lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_SECRET') | default(lookup('password', '/dev/null length=43 chars=ascii_letters,digits'), true) }}"
+  no_log: true
+
+- name: Write dashboard basic-auth env (dashboard refuses non-loopback binds without it)
+  ansible.builtin.lineinfile:
+    path: /home/{{ admin_username }}/.hermes/.env
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0600"
+  loop:
+    - { key: 'HERMES_DASHBOARD_BASIC_AUTH_USERNAME', value: "{{ dash_user }}" }
+    - { key: 'HERMES_DASHBOARD_BASIC_AUTH_PASSWORD', value: "{{ dash_pass }}" }
+    - { key: 'HERMES_DASHBOARD_BASIC_AUTH_SECRET', value: "{{ dash_secret }}" }
+  no_log: true
+  notify: Restart dashboard
+
 - name: Generate dashboard session token when not provided
   ansible.builtin.set_fact:
     dash_token: "{{ lookup('env', 'HERMES_DASHBOARD_SESSION_TOKEN') | default(lookup('password', '/dev/null length=43 chars=ascii_letters,digits'), true) }}"
@@ -29,7 +51,7 @@
       After=network-online.target tailscaled.service hermes-gateway.service
       Wants=network-online.target
       [Service]
-      ExecStart=/home/{{ admin_username }}/.hermes/bin/hermes dashboard --host 0.0.0.0 --port {{ hermes_dashboard_port }} --no-open
+      ExecStart={{ hermes_bin }} dashboard --host 0.0.0.0 --port {{ hermes_dashboard_port }} --no-open
       Restart=on-failure
       RestartSec=5
       [Install]
@@ -52,6 +74,23 @@
     daemon_reload: true
   become_user: "{{ admin_username }}"
   become: true
+
+- name: Wait for the dashboard to answer (authenticated probe)
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ hermes_dashboard_port }}/api/status"
+    user: "{{ dash_user }}"
+    password: "{{ dash_pass }}"
+    force_basic_auth: true
+    status_code: 200
+  register: dash_health
+  retries: 12
+  delay: 10
+  until: dash_health.status == 200
+  no_log: true
+
+- name: Dashboard credentials pointer (never the password itself)
+  ansible.builtin.debug:
+    msg: "Dashboard is password-protected (user `admin`). Sign in from inside Perch; the password lives in ~/.hermes/.env on the server (HERMES_DASHBOARD_BASIC_AUTH_PASSWORD, mode 0600)."
 
 - name: Install the perch-approvals ntfy hook plugin (approval push bridge)
   ansible.builtin.copy:

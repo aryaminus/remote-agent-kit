@@ -10,14 +10,16 @@ variable "server_name" {
   default     = "hermes"
 }
 
-# CPX21 = 3 vCPU / 4 GB / 80 GB, AMD x86. x86 is deliberate: the Hermes
-# gateway crash-loops on ARM/aarch64 under systemd (upstream issue), and the
-# ~6.6 GB install (browser engine + node + python) wants 80 GB headroom.
-# Cheaper fallback: cx22 (2 vCPU / 4 GB / 40 GB). See docs/costs.md.
+# Verified 2026-09-16 via Hetzner API (fsn1, gross): cpx21 is listed but
+# UNORDERABLE in fsn1 ("can no longer be ordered"); the x1 shared line is
+# being retired region by region. cx33 (4 vCPU / 8 GB / 80 GB, ~€9.99) is the
+# current headroom default; cx23 (~€6.49, 2/4/40) is the cheapest viable x86.
+# Keep x86 (cpx/cx lines), never ARM (cax) — the Hermes gateway crash-loops
+# on ARM/aarch64 under systemd.
 variable "server_type" {
   description = "Hetzner server type. Keep x86 (cpx/cx lines), not ARM (cax)."
   type        = string
-  default     = "cpx21"
+  default     = "cx33"
 }
 
 variable "image" {

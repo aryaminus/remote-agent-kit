@@ -3,7 +3,7 @@
 #
 # HOW TO USE (the "Deploy to Hetzner" button is a redirect + this paste):
 #   1. Open https://console.hetzner.cloud → your project → Add Server.
-#   2. Image Ubuntu 24.04 · Type CPX21 (x86 — never ARM) · Location closest to you.
+#   2. Image Ubuntu 24.04 · Type cx33 (x86 — never ARM) · Location closest to you.
 #   3. SSH keys: add your PUBLIC key (papers over the key problem — it lands on root).
 #   4. Firewall: default (or none — this config firewalls the host itself).
 #   5. Expand "Cloud config" at the bottom and paste THIS WHOLE FILE.

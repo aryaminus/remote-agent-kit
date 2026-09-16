@@ -5,3 +5,12 @@
     daemon_reload: true
   become_user: "{{ admin_username }}"
   become: true
+
+- name: Restart dashboard
+  ansible.builtin.systemd:
+    name: hermes-dashboard
+    scope: user
+    state: restarted
+    daemon_reload: true
+  become_user: "{{ admin_username }}"
+  become: true

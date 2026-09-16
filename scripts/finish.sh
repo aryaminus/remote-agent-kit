@@ -7,7 +7,7 @@
 #   bash ~/finish.sh
 set -euo pipefail
 
-BIN="$HOME/.hermes/bin/hermes"
+BIN="$HOME/.local/bin/hermes"
 ENV="$HOME/.hermes/.env"
 API_PORT=8642
 DASH_PORT=9119

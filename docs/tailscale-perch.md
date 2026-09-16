@@ -52,6 +52,10 @@ your phone reaches everything from anywhere with the Tailscale app signed in.
 ## First connection
 
 1. Install Tailscale on laptop + phone, same account as the auth key.
+   macOS: use the **App Store app** (proper network interface — SSH, Termius,
+   and browsers all route transparently). The Homebrew CLI in userspace mode
+   reaches the control plane but does NOT route data without a TUN device.
+   Linux: official `install.sh` + `tailscale up` is enough.
 2. `make ssh` (uses the tailnet once known) or bootstrap SSH to the public IP.
 3. On the server: `tailscale ip -4` → note `100.x.y.z`.
 4. `make pair` → follow the QR flow **on the server**. The pairing script is

@@ -155,9 +155,9 @@ set_var() { # set_var FILE KEY VALUE — regex tolerates fmt's = alignment
   printf '%s = "%s"\n' "$2" "$3" >> "$1"
 }
 cur_val() { grep -m1 -E "^$2 =" "$1" 2>/dev/null | sed -E 's/^.*= *"([^"]*)".*/\1/' || true; }
-STYPE="$(cur_val "$TFV" server_type)"; [[ -n "$STYPE" ]] || STYPE=cpx21
-printf 'Size: 1) cpx21 — 3 vCPU/4GB/80GB ~€7.55 (recommended)  2) cx22 — 2/4/40 ~€3.79 (tight) [%s]: ' "$STYPE"
-IFS= read -r sc || sc=""; [[ -z "$sc" ]] && sc="$STYPE"; [[ "$sc" == "2" ]] && sc=cx22; [[ "$sc" == "1" ]] && sc=cpx21
+STYPE="$(cur_val "$TFV" server_type)"; [[ -n "$STYPE" ]] || STYPE=cx33
+printf 'Size: 1) cx33 — 4 vCPU/8GB/80GB ~€9.99 (recommended, headroom)  2) cx23 — 2/4/40 ~€6.49 (tight) [%s]: ' "$STYPE"
+IFS= read -r sc || sc=""; [[ -z "$sc" ]] && sc="$STYPE"; [[ "$sc" == "2" ]] && sc=cx23; [[ "$sc" == "1" ]] && sc=cx33
 set_var "$TFV" server_type "$sc"
 LOC="$(cur_val "$TFV" location)"; [[ -n "$LOC" ]] || LOC=fsn1
 printf 'Region: fsn1/nbg1/hel1 (EU) or ash/hil (US) [%s]: ' "$LOC"

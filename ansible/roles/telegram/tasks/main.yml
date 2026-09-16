@@ -23,7 +23,7 @@
   when: lookup('env', 'TELEGRAM_BOT_TOKEN') | length > 0 and lookup('env', 'TELEGRAM_ALLOWED_USERS') | length > 0
 
 - name: Configure the gateway platform (writes config, starts nothing)
-  ansible.builtin.command: /home/{{ admin_username }}/.hermes/bin/hermes gateway setup --platform {{ telegram_platform }}
+  ansible.builtin.command: "{{ hermes_bin }} gateway setup --platform {{ telegram_platform }}"
   become_user: "{{ admin_username }}"
   become: true
   register: gw_setup
@@ -37,7 +37,7 @@
   # Upstream asks two [Y/n] prompts with no --yes flag; over SSH stdin it
   # aborts and installs nothing. n = don't start now, Y = enable on boot.
   ansible.builtin.shell:
-    cmd: printf 'n\nY\n' | /home/{{ admin_username }}/.hermes/bin/hermes gateway install
+    cmd: printf 'n\nY\n' | {{ hermes_bin }} gateway install
     creates: /home/{{ admin_username }}/.config/systemd/user/hermes-gateway.service
   become_user: "{{ admin_username }}"
   become: true

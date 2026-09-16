@@ -1,7 +1,7 @@
 # llms.txt — remote-agent-kit index for humans and coding agents
 
 > remote-agent-kit: Terraform + Ansible + Makefile kit that provisions a
-> hardened Hetzner VPS (CPX21 x86, Ubuntu 24.04), joins it to Tailscale, and
+> hardened Hetzner VPS (cx33 x86, Ubuntu 24.04), joins it to Tailscale, and
 > configures Hermes Agent (Telegram gateway, Perch phone-client API, Agent of
 > Empires multi-agent coding, backups). MIT licensed. No servers are built
 > here; this repo configures YOUR server. Secrets live in `.env` only.
@@ -36,7 +36,7 @@
 ## Provision (Terraform — Hetzner only)
 
 - terraform/versions.tf, providers.tf — hcloud ~> 1.49, token from var/env
-- terraform/variables.tf — server_type default cpx21 (x86 ONLY, never cax ARM: gateway crash-loops)
+- terraform/variables.tf — server_type default cx33 (x86 ONLY, never cax ARM: gateway crash-loops)
 - terraform/server.tf — edge-closed firewall (SSH-from-your-IP, ICMP; no 80/443), ssh key, server + cloud-init
 - terraform/cloud-init.yaml.tftpl — first-boot only: non-root user, key-only SSH, base packages
 - terraform/outputs.tf — public IPv4 (bootstrap), ids, tailscale hint
