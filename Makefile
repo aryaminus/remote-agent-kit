@@ -11,6 +11,9 @@ ANS := ansible-playbook -i ansible/inventory/hosts.yml ansible/playbook.yml
 help: ## show every command
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
 
+start: ## THE easy button: interactive zero-to-agent-box wizard
+	./scripts/start.sh
+
 init: ## one-time: terraform init + ansible collections
 	$(TF) init
 	ansible-galaxy collection install -r ansible/collections/requirements.yml -p ./ansible/collections

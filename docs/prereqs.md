@@ -1,6 +1,9 @@
-# Prerequisites (gather these before `make init`)
+# Prerequisites (gather these before `./scripts/start.sh`)
 
-Takes ~10 minutes, all free except the VPS itself.
+Three free accounts, ~10 minutes. The wizard asks for everything below
+interactively (validating as you type) — this page is just so you know
+where each value comes from. Nothing here costs money except the VPS
+itself, billed hourly (~€0.01/hr to try).
 
 | # | What | Where | Notes |
 |---|---|---|---|

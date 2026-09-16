@@ -23,12 +23,18 @@ for f in .env terraform/terraform.tfvars ansible/inventory/hosts.yml; do
   [[ -f "$f" ]] && ok "$f exists" || bad "$f missing — copy the .example and fill it in"
 done
 
-# 3. …and contain no CHANGEME placeholders (the #1 failed-deploy cause)
-if [[ -f .env && -f terraform/terraform.tfvars && -f ansible/inventory/hosts.yml ]]; then
-  if grep -q CHANGEME .env terraform/terraform.tfvars ansible/inventory/hosts.yml 2>/dev/null; then
-    bad "CHANGEME placeholders remain:"; grep -n CHANGEME .env terraform/terraform.tfvars ansible/inventory/hosts.yml | head -5
+# 3. …and .env + tfvars contain no CHANGEME placeholders (the #1 failed-deploy
+# cause). hosts.yml is exempt: its real IP is unknown until `make apply`
+# fills it in (start.sh does this automatically) — placeholder there only
+# warns, since plan/apply never touch it.
+if [[ -f .env && -f terraform/terraform.tfvars ]]; then
+  if grep -q CHANGEME .env terraform/terraform.tfvars 2>/dev/null; then
+    bad "CHANGEME placeholders remain:"; grep -n CHANGEME .env terraform/terraform.tfvars | head -5
   else
-    ok "no CHANGEME placeholders left"
+    ok "no CHANGEME placeholders left (.env, tfvars)"
+  fi
+  if grep -q CHANGEME ansible/inventory/hosts.yml 2>/dev/null; then
+    warn "hosts.yml still has its placeholder IP — fine until deploy (start.sh fills it after apply)"
   fi
   # 4. SSH private key referenced by inventory actually exists
   KEY="$(grep -E 'ansible_ssh_private_key_file:' ansible/inventory/hosts.yml | awk '{print $2}' | head -1)"
