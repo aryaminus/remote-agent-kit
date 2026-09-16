@@ -37,26 +37,25 @@ Terraform (terraform/)          Ansible (ansible/)                Phone / laptop
 * Telegram uses **polling**: the gateway dials out, nothing dials in.
 * Each coding agent runs in its own container + `tmux` session via AoE.
 
-## Quickstart
+## Quickstart — one command
 
 ```bash
-# 0. Prereqs — Hetzner account + API token, Tailscale account + auth key,
-#    Telegram bot token + your numeric user id, an SSH key.
-#    Read docs/prereqs.md first (5 min).
-
-cp terraform/terraform.tfvars.example terraform/terraform.tfvars
-cp ansible/inventory/hosts.yml.example ansible/inventory/hosts.yml
-cp .env.example .env
-# Edit the three files above — secrets live ONLY there, never committed.
-
-make init      # terraform init + ansible-galaxy install
-make preflight # fail free on your laptop before spending a cent
-make plan      # review what will be created
-make apply     # provision the VPS (~60s)
-make deploy    # configure everything (~10 min)
-make pair      # QR to scan with Perch / address for Telegram test
-make doctor    # 7-point health check (logged to logs/doctor.log)
+git clone https://github.com/aryaminus/remote-agent-kit.git
+cd remote-agent-kit
+./scripts/start.sh     # or: make start
 ```
+
+That's the whole setup. `start.sh` checks tools (offers to install them),
+asks for your API keys **with validation** (typed blind, never printed),
+writes the three config files, shows you the Terraform plan for approval,
+then provisions → configures → verifies → prints the phone-pairing steps.
+Re-running resumes where you stopped; nothing done is redone.
+Pass `--reset` to start over, `--yes` to skip confirmations.
+
+You need 3 free accounts first (5 min): Hetzner, Tailscale, Telegram —
+`docs/prereqs.md`. Trying costs cents (hourly billing, `make teardown`
+destroys). Manual path (same steps the wizard runs): `make init`,
+`make preflight`, `make plan`, `make apply`, `make deploy`, `make doctor`.
 
 Day to day: `make ssh`, `make logs`, `make backup`. Full lifecycle in
 `docs/ops-runbook.md`. Costs in `docs/costs.md` (~€7.55/mo VPS + $5–20/mo model
