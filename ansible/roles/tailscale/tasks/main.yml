@@ -47,6 +47,16 @@
   delegate_to: localhost
   become: false
 
+- name: Disable ssh.socket (socket activation ignores ListenAddress)
+  # Ubuntu 24.04: an active ssh.socket owns 0.0.0.0:22 and bypasses the
+  # ListenAddress lockdown below — disable it or SSH stays publicly bound
+  # with zero errors anywhere. Found live on the Path-A test box.
+  ansible.builtin.systemd:
+    name: ssh.socket
+    enabled: false
+    state: stopped
+  failed_when: false
+
 - name: Bind sshd to tailnet IP + localhost only
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
