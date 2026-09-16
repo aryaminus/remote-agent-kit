@@ -21,6 +21,12 @@ hermes_dashboard_port: 9119
 # (no key stored). openrouter/anthropic need their key in .env.
 model_provider: nous
 
+# Messaging platform. telegram is the tested default; Hermes also speaks
+# discord, whatsapp and signal through the same gateway setup flow — set this
+# var and matching *_BOT_TOKEN / *_ALLOWED_USERS env to switch (see the
+# gateway docs for per-platform variable names before relying on it).
+telegram_platform: telegram
+
 # Tailscale
 tailscale_hostname: hermes
 tailscale_extra_args: ""   # e.g. "--advertise-tags=tag:server"

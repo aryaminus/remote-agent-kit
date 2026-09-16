@@ -51,7 +51,7 @@ handy for letting someone view the dashboard without joining your tailnet),
 and Perch can pair via public HTTPS instead of tailnet:
 
 ```bash
-# on the server (Perch repo script), public-URL mode:
+# on the server (public pairing script from perch-site), public-URL mode:
 bash pair.sh --url https://hermes.<you>.exe.xyz:8642   # must be https — the
 # script refuses plain HTTP to public hosts, and the key would cross the net
 ```

@@ -42,8 +42,12 @@ for s in scripts/*.sh; do
   if bash -n "$s"; then ok "bash -n $s"; else bad "syntax error in $s"; fi
 done
 
-# 5. YAML syntax (python is everywhere; pyyaml usually is)
-python3 - <<'EOF'
+# 5. YAML syntax + role src resolution (Broken Windows: a copy/template src
+# that resolves nowhere fails deploy on the server — this exact bug shipped
+# once with the perch role). NOTE: the python MUST sit inside the if
+# condition: under `set -e` a bare failing command kills the shell before
+# any `$?` check on the next line can run.
+if python3 - <<'EOF'
 import glob, sys
 try:
     import yaml
@@ -55,13 +59,45 @@ mine = [f for f in glob.glob("ansible/**/*.yml", recursive=True)
         if not f.startswith("ansible/collections/")]
 for f in mine + glob.glob(".github/workflows/*.yml"):
     try:
-        list(yaml.safe_load_all(open(f)))
+        docs = list(yaml.safe_load_all(open(f)))
         print(f"  ✓ {f}")
     except Exception as e:
-        print(f"  ✗ {f}: {e}"); bad = 1
+        print(f"  ✗ {f}: {e}"); bad = 1; continue
+    # Broken-Windows check: copy/template src: must resolve to a real file.
+    # (This exact bug shipped once: the perch role copied a files/ dir that
+    # did not exist, failing deploy at the worst moment — on the server.)
+    if f.startswith("ansible/roles/"):
+        role_root = f.split("/tasks/")[0] if "/tasks/" in f else None
+        if role_root:
+            import os
+            def walk_tasks(node):
+                def is_file_module(k):
+                    # matches copy/template in short AND FQCN form
+                    # (ansible.builtin.copy), which this repo uses throughout
+                    return k in ("copy", "template") or k.endswith((".copy", ".template"))
+                if isinstance(node, dict):
+                    for k, v in node.items():
+                        if is_file_module(k) and isinstance(v, dict) and "src" in v:
+                            if not v.get("remote_src"):
+                                src = str(v["src"])
+                                cands = [os.path.join(role_root, "files", src),
+                                         os.path.join(role_root, src)]
+                                if not any(os.path.exists(c) for c in cands):
+                                    print(f"  ✗ {f}: src '{src}' resolves nowhere under {role_root}/"); globals()["bad"] = 1
+                        else:
+                            walk_tasks(v)
+                elif isinstance(node, list):
+                    for item in node:
+                        walk_tasks(item)
+            for doc in docs:
+                walk_tasks(doc)
 sys.exit(bad)
 EOF
-[[ $? -eq 0 ]] || fail=$((fail+1))
+then
+  :
+else
+  fail=$((fail+1))
+fi
 
 # 6. Terraform fmt + validate (only if terraform is installed)
 if command -v terraform >/dev/null 2>&1; then
