@@ -18,13 +18,17 @@
     state: started
 
 - name: Join the tailnet
+  # --operator is set here (not only via `tailscale set`) because tailscaled
+  # rejects `up` calls that omit any non-default flag once one exists.
+  # no_log: the auth key must never land in logs.
   ansible.builtin.command:
     cmd: >-
       tailscale up --authkey={{ lookup('env', 'TAILSCALE_AUTHKEY') }}
-      --hostname={{ tailscale_hostname }} {{ tailscale_extra_args }}
+      --hostname={{ tailscale_hostname }} --operator={{ admin_username }} {{ tailscale_extra_args }}
   register: ts_up
   changed_when: "'already' not in (ts_up.stderr | lower)"
   failed_when: ts_up.rc != 0 and 'already' not in (ts_up.stderr | lower)
+  no_log: true
 
 - name: Read the tailnet IPv4
   ansible.builtin.command: tailscale ip -4
@@ -54,6 +58,40 @@
   community.general.ufw:
     rule: allow
     port: "22"
+    proto: tcp
+    from_ip: 100.64.0.0/10
+
+- name: Allow tailscaled operator for serve config (one-time, least privilege)
+  # Lets the hermes user manage `tailscale serve` without root afterwards.
+  ansible.builtin.command: tailscale set --operator={{ admin_username }}
+  changed_when: false
+
+- name: Check Tailscale Serve config
+  ansible.builtin.command: tailscale serve status
+  become_user: "{{ admin_username }}"
+  become: true
+  register: ts_serve_status
+  changed_when: false
+  failed_when: false
+
+- name: Expose the API over Tailscale Serve (HTTPS)
+  # iOS App Transport Security refuses cleartext HTTP to 100.x (CGNAT is not
+  # "local" per ATS), so the phone app REQUIRES https://<host>.<tail>.ts.net.
+  # Needs the one-time tailnet admin approval:
+  # https://login.tailscale.com/ → DNS → "HTTPS certificates" + Serve enabled.
+  # Without it this task fails loudly with the approval URL — enable and re-run.
+  ansible.builtin.command: tailscale serve --bg --https=443 http://127.0.0.1:{{ hermes_api_port }}
+  become_user: "{{ admin_username }}"
+  become: true
+  register: ts_serve
+  changed_when: "'Available within your tailnet' in ts_serve.stdout"
+  failed_when: ts_serve.rc != 0
+  when: "'https://' not in ts_serve_status.stdout"
+
+- name: UFW — HTTPS serve answers on the tailnet only
+  community.general.ufw:
+    rule: allow
+    port: "443"
     proto: tcp
     from_ip: 100.64.0.0/10
 

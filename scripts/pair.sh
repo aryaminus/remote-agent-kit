@@ -12,6 +12,20 @@ HOST="$(terraform -chdir=terraform output -raw server_ipv4 2>/dev/null || true)"
 echo "remote-agent-kit · pair"
 echo
 echo "1) Make sure Tailscale is on this machine AND the phone (same tailnet)."
+# iOS REQUIRES the https MagicDNS name (ATS refuses cleartext to 100.x);
+# derive it from the local tailnet when possible.
+if command -v tailscale >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+  HTTPS_URL="$(tailscale status --json 2>/dev/null | python3 -c 'import json,sys
+try:
+  d = json.load(sys.stdin)
+  suf = d.get("MagicDNSSuffix", "")
+  names = [p.get("HostName", "") for p in d.get("Peer", {}).values()] + [d.get("Self", {}).get("HostName", "")]
+  host = next((n for n in names if n == "hermes"), "")
+  print(f"https://{host}.{suf}" if host and suf else "")
+except Exception:
+  print("")' || true)"
+  [[ -n "$HTTPS_URL" ]] && echo "   iPhone address (HTTPS, required by iOS): $HTTPS_URL"
+fi
 echo "2) SSH to the server and run the public pairing script there:"
 echo
 echo "     ssh hermes@${HOST}"

@@ -46,7 +46,7 @@
 
 - ansible/playbook.yml — 7 idempotent roles, feature-toggled in group_vars/all.yml
 - ansible/roles/common — apt, swap, key-only SSH, UFW deny-incoming, fail2ban, unattended-upgrades
-- ansible/roles/tailscale — up with auth key, verify tailnet SSH, THEN bind sshd to tailnet IP
+- ansible/roles/tailscale — up with auth key, verify tailnet SSH, THEN bind sshd to tailnet IP; operator grant + HTTPS serve of the API (iOS requires https MagicDNS); UFW 22/443 tailnet-only
 - ansible/roles/hermes — installer (~6.6 GB), API env 0600, keygen, UFW tailnet-only 8642, doctor
 - ansible/roles/telegram — polling bot, mandatory allow-list, non-interactive install workaround, linger, health wait
 - ansible/roles/perch — dashboard 9119 service (tailnet-only), pinned session token, ntfy hook plugin
