@@ -152,6 +152,25 @@
     msg: "Add this to github.com → Settings → SSH keys: {{ (gh_pubkey.content | b64decode).strip() }}"
   when: install_agent_clis | default(true)
 
+- name: Model keys for agent CLIs (from operator .env — never prompted, never logged)
+  # OPENROUTER_API_KEY / ANTHROPIC_API_KEY in .env land in ~/.hermes/.env
+  # (0600) so every CLI inherits them. OpenCode is provider-agnostic and
+  # reads OPENROUTER_API_KEY natively; codex reads OPENAI_API_KEY; claude
+  # reads ANTHROPIC_API_KEY. no_log keeps values out of logs.
+  ansible.builtin.lineinfile:
+    path: /home/{{ admin_username }}/.hermes/.env
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0600"
+  loop:
+    - { key: 'OPENROUTER_API_KEY', value: "{{ lookup('env', 'OPENROUTER_API_KEY') }}" }
+    - { key: 'ANTHROPIC_API_KEY', value: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}" }
+    - { key: 'OPENAI_API_KEY', value: "{{ lookup('env', 'OPENAI_API_KEY') }}" }
+  when: item.value | length > 0
+  no_log: true
+
 - name: Verify AoE sees the installed CLIs
   ansible.builtin.command: /usr/local/bin/aoe agents
   become_user: "{{ admin_username }}"
