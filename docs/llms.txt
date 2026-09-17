@@ -33,6 +33,7 @@
 - scripts/ck-replica.sh — exact replica of local CK state to the box (WAL-safe .backup, verify by counts)
 - scripts/rollback.sh — restore server from tarball (snapshots first, always asks)
 - scripts/pair.sh — pairing instructions (QR itself comes from Perch's pair.sh on the server)
+- scripts/perch-web.sh — serve the Perch web export on this Mac (needs tailnet + box CORS origin)
 - scripts/repo_check.sh — secret scan + bash/YAML syntax + terraform fmt (also CI)
 
 ## Provision (Terraform — Hetzner only)
