@@ -40,6 +40,8 @@ pair: ## print pairing info (Perch QR via server script + Telegram test)
 	./scripts/pair.sh
 pair-qr: ## fetch the pairing QR from the box and print it HERE — point phone at this screen
 	./scripts/pair.sh --qr
+perch-web: ## run the Perch web app on THIS Mac against your cloud box
+	./scripts/perch-web.sh
 
 ssh: ## ssh to the box over Tailscale (no public port needed)
 	ssh $(INV_USER)@$$(terraform -chdir=terraform output -raw tailscale_hint 2>/dev/null || echo '<server-ip — see terraform output>')
