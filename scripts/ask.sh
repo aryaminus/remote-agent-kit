@@ -17,13 +17,15 @@ mkdir -p logs
 
 if [[ "$MODE" == "https" ]] || ! $SSH true 2>/dev/null; then
   # Tailnet/direct-URL path (needs local Tailscale or explicit AGENT_URL).
+  # Hostname follows group_vars agent_hostname (default agentbox).
   [[ -f .env ]] && { set -a; . ./.env; set +a; }
-  URL="${AGENT_URL:-$(tailscale status --json 2>/dev/null | python3 -c 'import json,sys
+  URL="${AGENT_URL:-$(RK_AGENT_HOST="$(grep -m1 agent_hostname ansible/inventory/group_vars/all.yml 2>/dev/null | awk '{print $2}' || echo agentbox)" tailscale status --json 2>/dev/null | python3 -c 'import json,os,sys
 try:
     d = json.load(sys.stdin)
     suf = d.get("MagicDNSSuffix", "")
+    want = os.environ.get("RK_AGENT_HOST", "agentbox")
     host = next((p.get("HostName","") for p in d.get("Peer", {}).values()
-                 if p.get("HostName") == "hermes"), "")
+                 if p.get("HostName") == want), "")
     print(f"https://{host}.{suf}" if host and suf else "")
 except Exception:
     print("")' || true)}"
