@@ -16,6 +16,7 @@
       - unattended-upgrades
       - python3
       - qrencode
+      - sqlite3
     state: present
 
 - name: 2 GB swapfile for small boxes
