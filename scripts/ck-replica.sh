@@ -14,6 +14,7 @@
 # through the online-backup API instead.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+RK_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 HOST="$(terraform -chdir=terraform output -raw server_ipv4 2>/dev/null || true)"
 [[ -n "$HOST" ]] || { echo "No terraform output. Run: make apply"; exit 2; }
@@ -73,6 +74,10 @@ for p in $PROJECTS; do
     echo "  ✓ $p project state transferred"
   fi
 done
+
+echo "→ remapping Mac paths to box paths in project bindings"
+scp -q "$RK_LIB_DIR/ck-remap.py" "${INV_USER}@${HOST}:/tmp/ck-remap.py"
+$SSH "python3 /tmp/ck-remap.py ${INV_USER} ${DEV_ROOT}; rm -f /tmp/ck-remap.py"
 
 echo "→ verifying"
 fails=0

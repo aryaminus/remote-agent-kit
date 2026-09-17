@@ -30,7 +30,7 @@
 - scripts/preflight.sh — Murphy's gate: tools + filled secrets + SSH key, before money moves
 - scripts/doctor.sh — 7-point live health check (read-only); appends JSONL to logs/doctor.log
 - scripts/backup.sh — pull newest server tarball over Tailscale
-- scripts/ck-replica.sh — exact replica of local CK state to the box (WAL-safe .backup, verify by counts)
+- scripts/ck-replica.sh — exact replica of local CK state to the box (WAL-safe .backup, verify by counts) + path-remap via ck-remap.py
 - scripts/rollback.sh — restore server from tarball (snapshots first, always asks)
 - scripts/pair.sh — pairing instructions (QR itself comes from Perch's pair.sh on the server)
 - scripts/perch-web.sh — serve the Perch web export on this Mac (needs tailnet + box CORS origin)
