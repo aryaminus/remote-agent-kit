@@ -11,7 +11,20 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MSG="${1:?usage: ask.sh \"your question\"}"
-SSH="ssh -o BatchMode=yes -o ConnectTimeout=10 hermes-x"
+# Exec-door ssh alias. ssh -G answers for ANY name, so probe for a real
+# configured host: try box-x (docs default), then hermes-x (owner's box).
+# Override with ASK_SSH_HOST if your alias differs.
+pick_host() {
+  local a
+  for a in box-x hermes-x; do
+    a_cfg="$(ssh -G "$a" 2>/dev/null | awk -v h="$a" '$1=="hostname" && $2!=h {print "yes"; exit}')"
+    [[ -n "$a_cfg" ]] && { echo "$a"; return; }
+  done
+  echo ""
+}
+ASK_HOST="${ASK_SSH_HOST:-$(pick_host)}"
+[[ -n "$ASK_HOST" ]] || { echo "No ssh alias 'box-x' or 'hermes-x' in ~/.ssh/config (or set ASK_SSH_HOST)."; exit 1; }
+SSH="ssh -o BatchMode=yes -o ConnectTimeout=10 ${ASK_HOST}"
 MODE="${ASK_TRANSPORT:-auto}"
 mkdir -p logs
 
@@ -51,13 +64,17 @@ print(d["message"]["content"])'
   sid_flow
 else
   # SSH path: everything executes on the box; nothing but the answer crosses.
-  export MSG
-  # shellcheck disable=SC2029  # $MSG is expanded CLIENT-side on purpose (payload)
-  $SSH python3 - "$MSG" <<'PYEOF'
-import json, os, subprocess, sys
+  # NEVER pass "$MSG" as an ssh CLI arg: ssh re-joins/re-splits args on
+  # spaces, so a multi-word message silently truncates to its first word
+  # (live-caught: 'Compute 2+2' arrived as 'Compute'). base64 in an unquoted
+  # heredoc is immune to quotes/spaces/$ alike.
+  MSG_B64="$(printf '%s' "$MSG" | base64 | tr -d '\n')"
+  # shellcheck disable=SC2029
+  $SSH python3 - <<PYEOF
+import base64, json, os, subprocess, sys
 from datetime import datetime, timezone
 
-msg = sys.argv[1]
+msg = base64.b64decode("$MSG_B64").decode()
 KEY = subprocess.run(
     "grep -m1 '^API_SERVER_KEY=' ~/.hermes/.env | cut -d= -f2-",
     shell=True, capture_output=True, text=True).stdout.strip()
@@ -76,15 +93,22 @@ def sessions():
     data = d.get("data", d.get("sessions", []))
     return {s.get("id") for s in data if isinstance(s, dict) and s.get("id")}
 
-try:
-    with open(SIDF) as f:
-        sid = f.read().strip()
-    if sid not in sessions():
-        raise ValueError("stale")
-except Exception:
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+import os as _os
+KEEP = _os.environ.get("RK_ASK_KEEP") == "1"
+if KEEP:
+    try:
+        with open(SIDF) as f:
+            sid = f.read().strip()
+        if sid not in sessions():
+            raise ValueError("stale")
+    except Exception:
+        KEEP = False  # fall through to fresh
+if KEEP:
+    pass
+else:
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
     sid = json.loads(api("POST", "/api/sessions",
-                         {"title": f"terminal {ts}"}))["session"]["id"]
+                         {"title": f"ask {ts}"}))["session"]["id"]
     with open(SIDF, "w") as f:
         f.write(sid)
 

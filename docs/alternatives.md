@@ -40,7 +40,7 @@ disposable sandboxes. The VPS-relevant bits:
 Using it with this kit:
 
 ```bash
-ssh exe.dev new hermes            # or via their dashboard
+ssh exe.dev new agentbox            # or via their dashboard
 # put the VM's address in ansible/inventory/hosts.yml, then:
 make deploy                       # all 7 roles apply unchanged
 ```
@@ -52,7 +52,7 @@ and Perch can pair via public HTTPS instead of tailnet:
 
 ```bash
 # on the server (public pairing script from perch-site), public-URL mode:
-bash pair.sh --url https://hermes.<you>.exe.xyz:8642   # must be https — the
+bash pair.sh --url https://agentbox.<you>.exe.xyz:8642   # must be https — the
 # script refuses plain HTTP to public hosts, and the key would cross the net
 ```
 

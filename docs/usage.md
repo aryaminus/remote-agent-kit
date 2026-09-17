@@ -11,7 +11,7 @@ The one-time setup on your Mac (already done on the owner's machine):
 
 ```bash
 # ~/.ssh/config — plain direct door + auto-tmux interactive door:
-Host hermes-x
+Host box-x
     HostName <box-ip>
     User <box-user>
 Host agent

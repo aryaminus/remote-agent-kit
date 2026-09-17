@@ -16,7 +16,7 @@
 
 - name: Nightly backup cron (hermes backup + data tarball, retention enforced)
   ansible.builtin.cron:
-    name: "hermes nightly backup"
+    name: "agentbox nightly backup"
     user: "{{ admin_username }}"
     hour: "3"
     minute: "0"
