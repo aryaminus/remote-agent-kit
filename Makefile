@@ -48,6 +48,9 @@ doctor: ## 7-point health check against the live box
 backup: ## snapshot reminder + pull an agent-data tarball
 	./scripts/backup.sh
 
+ck-replica: ## exact replica of local ControlKeel state onto the box (WAL-safe)
+	./scripts/ck-replica.sh
+
 rollback: ## restore ~/.hermes on the server from a local backup (asks first)
 	./scripts/rollback.sh $(FILE)
 
