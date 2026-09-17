@@ -399,6 +399,90 @@
     - lookup('env', 'ZAI_API_KEY') | length > 0
     - lookup('env', 'ANTHROPIC_API_KEY') | length == 0
 
+- name: CommandCode as opencode provider (goat subscription, catalog fetched live)
+  # CommandCode (cmd CLI) exposes an OpenAI-compatible endpoint for goat
+  # subscribers: api.commandcode.ai/provider/v1 (69+ models: claude-*, gpt-*,
+  # qwen, gemini, grok…). opencode has no native provider for it, so this task
+  # writes a custom @ai-sdk/openai-compatible block into the user config —
+  # MODEL LIST GENERATED FROM /v1/models AT DEPLOY TIME (never stale, never
+  # hardcoded; re-run `make deploy` to refresh the catalog). Key goes in as a
+  # literal (config chmod 600 — same at-rest class as opencode's auth.json)
+  # because {env:} breaks in non-login contexts (aoe launching agents
+  # directly), which was the openrouter lesson.
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      mkdir -p "$HOME/.config/opencode"
+      CC_KEY="$(grep -m1 '^COMMANDCODE_API_KEY=' "$HOME/.hermes/.env" | cut -d= -f2-)"
+      [ -n "$CC_KEY" ] || { echo "NO-KEY"; exit 0; }
+      export RK_CC_KEY="$CC_KEY"
+      python3 - <<'PYEOF'
+      import json, os, urllib.request
+      key = os.environ["RK_CC_KEY"]
+      req = urllib.request.Request(
+          "https://api.commandcode.ai/provider/v1/models",
+          headers={"Authorization": "Bearer " + key,
+                   # their WAF 403s the default python-urllib UA (verified:
+                   # curl works, urllib doesn't — same key)
+                   "User-Agent": "remote-agent-kit/1.0"})
+      with urllib.request.urlopen(req, timeout=20) as r:
+          catalog = json.load(r).get("data", [])
+      ids = sorted(m["id"] for m in catalog)
+      if not ids:
+          raise SystemExit("empty model catalog")
+      # Two protocol shapes (verified live against the API): claude-* models
+      # must use the Anthropic Messages shape (/provider/v1/messages); the
+      # rest use OpenAI chat/completions. Plan gates answer with
+      # MODEL_NOT_IN_PLAN (tier) or "insufficient credits" (metered) — those
+      # are account-side; :free models complete, proving the wiring.
+      def mk(i):
+          return {"name": i, "tools": True}
+      openai_models = {i: mk(i) for i in ids if not i.startswith("claude-")}
+      anthropic_models = {i: mk(i) for i in ids if i.startswith("claude-")}
+      p = os.path.expanduser("~/.config/opencode/opencode.json")
+      try:
+          d = json.load(open(p))
+      except Exception:
+          d = {}
+      d.setdefault("provider", {})["commandcode"] = {
+          "name": "CommandCode (goat)",
+          "npm": "@ai-sdk/openai-compatible",
+          "options": {
+              "baseURL": "https://api.commandcode.ai/provider/v1",
+              "apiKey": key,
+          },
+          "models": openai_models,
+      }
+      if anthropic_models:
+          d["provider"]["commandcode-claude"] = {
+              "name": "CommandCode Claude (goat)",
+              "npm": "@ai-sdk/anthropic",
+              "options": {
+                  "baseURL": "https://api.commandcode.ai/provider/v1",
+                  "apiKey": key,
+              },
+              "models": anthropic_models,
+          }
+      before = open(p).read() if os.path.exists(p) else ""
+      after = json.dumps(d, indent=2)
+      if after != before:
+          with open(p, "w") as fh:
+              fh.write(after)
+          os.chmod(p, 0o600)
+          print("CHANGED %d models (%d anthropic-shaped)" % (len(ids), len(anthropic_models)))
+      else:
+          print("OK %d models (%d anthropic-shaped)" % (len(ids), len(anthropic_models)))
+      PYEOF
+    executable: /bin/bash
+  become_user: "{{ admin_username }}"
+  become: true
+  register: rk_cc_provider
+  changed_when: (rk_cc_provider.stdout | default('OK')).startswith('CHANGED')
+  failed_when: rk_cc_provider.rc != 0
+  when:
+    - install_agent_clis | default(true)
+    - lookup('env', 'COMMANDCODE_API_KEY') | length > 0
+
 - name: Show detected agents
   ansible.builtin.debug:
     msg: "{{ aoe_agents.stdout_lines | default(['(aoe agents output unavailable — run `aoe agents` over SSH)']) }}"
