@@ -286,6 +286,115 @@
   changed_when: false
   failed_when: false
 
+# ── Bring-your-own-credential lanes ─────────────────────────────────────────
+# Three mechanisms so a user's OWN subscriptions work with zero interactive
+# pastes (each verified live):
+#   1. login-shell exports: opencode reads OPENROUTER_API_KEY natively, but
+#      nothing sourced ~/.hermes/.env into shells — agent CLIs saw zero keys.
+#   2. auth.json auto-wiring: opencode's zai/zai-coding-plan/opencode(Zen)
+#      providers IGNORE env vars — without this task every user must paste
+#      interactively, and a wrong paste (proven: an OpenRouter key in the Zen
+#      slot) fails only at call time with "Invalid API key".
+#   3. Z.AI→Claude bridge: GLM Coding Plan ships an Anthropic-compatible
+#      endpoint (api.z.ai/api/anthropic) — claude runs on it with model
+#      aliases (proven: ZAI-CLAUDE-OK). Only when no real Anthropic key.
+
+- name: Export model keys into login shells (profile.d sources the 0600 env file)
+  ansible.builtin.copy:
+    dest: /etc/profile.d/model-keys.sh
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # remote-agent-kit: surface operator model keys (from ~/.hermes/.env,
+      # 0600) to agent CLIs in login shells. opencode reads OPENROUTER_API_KEY
+      # natively; codex reads OPENAI_API_KEY; cmd reads COMMANDCODE_API_KEY.
+      # Only *_API_KEY lines — never gateway-only vars (dashboard password etc).
+      _rk_env="$HOME/.hermes/.env"
+      if [ -r "$_rk_env" ]; then
+        for _rk_line in $(grep -E '^[A-Z0-9_]+_API_KEY=' "$_rk_env"); do
+          export "$_rk_line"
+        done
+      fi
+      unset _rk_env _rk_line
+  when: install_agent_clis | default(true)
+
+- name: Wire opencode auth.json from operator keys (zai + zai-coding-plan + Zen)
+  # Same key, two Z.AI billing tracks: zai/* = PAYG wallet, zai-coding-plan/*
+  # = GLM Coding Plan subscription (endpoint api.z.ai/api/coding/paas/v4).
+  # OAuth-typed entries (if a user logged in that way) are never touched.
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      AUTH="$HOME/.local/share/opencode/auth.json"
+      mkdir -p "$(dirname "$AUTH")"; touch "$AUTH"; chmod 600 "$AUTH"
+      python3 - "$AUTH" '{{ lookup("env", "ZAI_API_KEY") }}' '{{ lookup("env", "OPENCODE_API_KEY") }}' <<'PYEOF'
+      import json, os, sys
+      auth_path, zai_key, zen_key = sys.argv[1], sys.argv[2], sys.argv[3]
+      try:
+          d = json.load(open(auth_path))
+      except Exception:
+          d = {}
+      changed = False
+      for provider, key in (("zai", zai_key), ("zai-coding-plan", zai_key), ("opencode", zen_key)):
+          if not key:
+              continue
+          cur = d.get(provider)
+          if cur is None or (cur.get("type") == "api" and cur.get("key") != key):
+              d[provider] = {"type": "api", "key": key}
+              changed = True
+      json.dump(d, open(auth_path, "w"), indent=2)
+      print("CHANGED" if changed else "OK")
+      PYEOF
+    executable: /bin/bash
+  become_user: "{{ admin_username }}"
+  become: true
+  register: rk_authjson
+  changed_when: rk_authjson.stdout | default('OK') == 'CHANGED'
+  no_log: true
+  when:
+    - install_agent_clis | default(true)
+    - (lookup('env', 'ZAI_API_KEY') | length > 0) or (lookup('env', 'OPENCODE_API_KEY') | length > 0)
+
+- name: Z.AI Coding Plan as Claude Code backend (Anthropic-compatible endpoint)
+  # GLM Coding Plan officially supports Claude Code via
+  # ANTHROPIC_BASE_URL=api.z.ai/api/anthropic + ANTHROPIC_AUTH_TOKEN=<zai key>.
+  # Skipped when a real ANTHROPIC_API_KEY exists (never hijack actual Anthropic
+  # billing). Writes ~/.claude/settings.json env block (merged, not clobbered).
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      mkdir -p "$HOME/.claude"
+      python3 - <<'PYEOF'
+      import json, os
+      p = os.path.expanduser("~/.claude/settings.json")
+      try:
+          d = json.load(open(p))
+      except Exception:
+          d = {}
+      d["env"] = {
+          "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+          "ANTHROPIC_AUTH_TOKEN": os.environ["RK_ZAI_KEY"],
+          "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.3",
+          "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.3",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5.3-flash",
+      }
+      json.dump(d, open(p, "w"), indent=2)
+      print("OK")
+      PYEOF
+    executable: /bin/bash
+  environment:
+    RK_ZAI_KEY: "{{ lookup('env', 'ZAI_API_KEY') }}"
+  become_user: "{{ admin_username }}"
+  become: true
+  register: rk_claude_bridge
+  changed_when: false
+  no_log: true
+  when:
+    - install_agent_clis | default(true)
+    - lookup('env', 'ZAI_API_KEY') | length > 0
+    - lookup('env', 'ANTHROPIC_API_KEY') | length == 0
+
 - name: Show detected agents
   ansible.builtin.debug:
     msg: "{{ aoe_agents.stdout_lines | default(['(aoe agents output unavailable — run `aoe agents` over SSH)']) }}"

@@ -118,17 +118,17 @@ startup-default agent exists in this opencode version — Tab-select +
 plain, skills only.)
 
 **One-time auth per CLI (yours, browser-based — we install binaries, never
-your logins):**
+your logins). Since the kit v-docs-update, most lanes are WIRED from `.env`
+by deploy — no interactive pastes:**
 
-| CLI | Auth |
+| CLI | Auth lane (all verified live on the reference box) |
 |---|---|
-| `claude` | **skipped for now** (owner's choice — needs Max/Pro sub or ANTHROPIC_API_KEY; add the key to `.env` and re-deploy to wire it) |
-| `codex` | ChatGPT device login — then note the **free-tier usage cap** (Plus boundary is real; `codex exec` reports it plainly) |
-| `opencode` | Any OpenRouter key (`OPENROUTER_API_KEY` in `.env` → server env, no prompt). Default Zen auth accepted the key, but its default endpoint can't run tools on some keys — pass an explicit model: `opencode run --model openrouter/anthropic/claude-sonnet-4 "do X"` (proven live) |
-| `cmd` (CommandCode) | `COMMANDCODE_API_KEY` in `.env` → server env; one paste into `cmd login` writes `~/.commandcode/auth.json`, then `cmd -p "do X"` runs headless (proven live: `COMMANDCODE-OK`) |
-| Z.AI/GLM via `opencode` | `ZAI_API_KEY` in `.env` → server env + `opencode auth login`. **Two entries = two billing tracks (verified live):** **"Z.AI"** → `zai/*` models bill the pay-as-you-go **API wallet** — an empty wallet answers *"Insufficient balance"* (wiring proven, wallet empty; top up at the Z.AI console). **"Z.AI Coding Plan"** → `zai-coding-plan/*` models bill your **GLM Coding Plan subscription** quota — if you hold the plan, this is your lane (proven live: `zai-coding-plan/glm-5.3` → `CP-OK`). Same key, different endpoint; both entries can coexist in `auth.json`. |
-| OpenCode Zen via `OPENCODE_API_KEY` | Zen key (`sk-…` from opencode.ai/auth) in `.env` → server env; ALSO stored once via `opencode auth login` → OpenCode Zen (verified: stored hash matches `.env`, and headless runs authenticate). **Two failure signatures, know them apart:** *"Invalid API key"* = wrong key in the Zen slot (we fixed one live — an OpenRouter key had been pasted there); *"No payment method …/billing"* = key is valid, the Zen workspace needs billing set up. |
-| Antigravity | not auto-installed (Google's script URL isn't pinnable); see their docs, then AoE detects it |
+| `claude` | **Z.AI Coding Plan bridge — automatic**: when `ZAI_API_KEY` is set and `ANTHROPIC_API_KEY` is not, deploy writes `~/.claude/settings.json` pointing at Z.AI's Anthropic-compatible endpoint (`api.z.ai/api/anthropic`, GLM model aliases; proven: `claude -p --model glm-5.3` → `BRIDGE-OK` with zero manual env). Real Anthropic key in `.env` disables the bridge (never hijacks actual Anthropic billing). |
+| `codex` | ChatGPT device login (subscription lane) **or** `OPENAI_API_KEY` in `.env` → login shells (PAYG lane; bypasses the free-tier cap). Free-tier boundary is real; `codex exec` reports it plainly. |
+| `opencode` | `OPENROUTER_API_KEY` in `.env` → login shells — opencode reads it natively, zero pastes (`--model openrouter/anthropic/claude-sonnet-4`, proven). |
+| `opencode` Z.AI/GLM | **Auto-wired**: deploy writes BOTH `zai` (PAYG wallet) and `zai-coding-plan` (subscription) entries into `~/.local/share/opencode/auth.json` from `ZAI_API_KEY` — the provider ignores env vars, and pasting by hand is how wrong-key incidents happen. Coding-plan models: `zai-coding-plan/glm-5.3` (proven: `WIRE-OK`); PAYG models `zai/*` need wallet funds ("Insufficient balance" = wiring proven, wallet empty). |
+| `opencode` Zen | **Auto-wired** from `OPENCODE_API_KEY` (same auth.json mechanism). Account reality: valid key + *"No payment method"* = Zen workspace needs billing at opencode.ai; *"Invalid API key"* = wrong key in the slot (auto-wiring makes this class of bug extinct). |
+| `cmd` (CommandCode) | `COMMANDCODE_API_KEY` in `.env` → login shells; headless (proven: `COMMANDCODE-OK`). |
 
 Agent subscriptions are billed by their vendors — separate from the ~€9.99
 box and the free-tier Nous model your Hermes brain uses.
