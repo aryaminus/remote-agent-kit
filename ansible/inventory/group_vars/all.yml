@@ -11,6 +11,8 @@ enable_hermes: true
 enable_telegram: true
 enable_perch_api: true
 enable_aoe: true
+# Full language runtimes agents invoke (uv/pnpm/rust/pip/compose).
+enable_toolchain: true
 # Herdr is the terminal-first alternative to AoE (no sandboxing/web UI —
 # see docs/alternatives.md). Install-only; default off.
 enable_herdr: false

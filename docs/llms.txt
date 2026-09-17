@@ -53,6 +53,7 @@
 - ansible/roles/telegram — polling bot, mandatory allow-list, non-interactive install workaround, linger, health wait
 - ansible/roles/perch — dashboard 9119 service (tailnet-only), pinned session token, ntfy hook plugin
 - ansible/roles/aoe — Docker + Agent of Empires from GitHub releases, `aoe agents` verify
+- ansible/roles/toolchain — uv/pnpm/rust/pip/compose/build-essential, all verified answering
 - ansible/roles/herdr — OFF by default; installs Herdr binary for terminal-first operators
 - ansible/roles/backups — nightly cron (hermes backup + tarball + optional age), retention, snapshot reminder
 
