@@ -1,0 +1,66 @@
+# toolchain — every language runtime agents actually invoke, verified live.
+# Present already (cloud-init/Hermes): node 24, npm 11, python3.12, gcc,
+# make, git. This role fills the gaps the audit found missing:
+#   uv ......... Astral's installer → ~/.local/bin (Hermes keeps a private
+#                uv copy; agents need one on PATH)
+#   pnpm ....... npm i -g (same global prefix ~/.local as claude/codex)
+#   rust/cargo . rustup, minimal profile (std included; add clippy/rustfmt
+#                per-project with `rustup component add`)
+#   pip/venv ... apt python3-pip + python3-venv (uv preferred; pip for legacy)
+#   compose .... docker-compose-v2 (docker.io alone has no `docker compose`)
+#   build-essential (linkers/headers for native builds; belt and braces)
+# Everything guarded by creates/binary checks — redeploys are no-ops.
+- name: Language runtime apt packages
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - python3-pip
+      - python3-venv
+      - docker-compose-v2
+    state: present
+
+- name: Install uv (Astral installer, user-level)
+  ansible.builtin.shell:
+    cmd: curl -LsSf https://astral.sh/uv/install.sh | sh
+    creates: /home/{{ admin_username }}/.local/bin/uv
+    executable: /bin/bash
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Install pnpm via npm global prefix
+  ansible.builtin.shell:
+    cmd: export PATH="$HOME/.local/bin:$PATH"; npm install -g pnpm
+    creates: /home/{{ admin_username }}/.local/bin/pnpm
+    executable: /bin/bash
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Install Rust toolchain via rustup (minimal profile)
+  ansible.builtin.shell:
+    cmd: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+    creates: /home/{{ admin_username }}/.cargo/bin/cargo
+    executable: /bin/bash
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Verify every toolchain binary answers
+  ansible.builtin.command: "{{ item }} --version"
+  become_user: "{{ admin_username }}"
+  become: true
+  loop:
+    - /home/{{ admin_username }}/.local/bin/uv
+    - /home/{{ admin_username }}/.local/bin/pnpm
+    - /home/{{ admin_username }}/.cargo/bin/cargo
+    - /home/{{ admin_username }}/.cargo/bin/rustc
+  register: toolchain_versions
+  changed_when: false
+  failed_when: false
+
+- name: Show toolchain versions
+  ansible.builtin.debug:
+    msg: "{{ toolchain_versions.results | map(attribute='stdout') | list }}"
+
+- name: Verify docker compose plugin
+  ansible.builtin.command: docker compose version
+  register: compose_version
+  changed_when: false
