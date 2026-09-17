@@ -8,23 +8,23 @@
 #   4. Firewall: default (or none — this config firewalls the host itself).
 #   5. Expand "Cloud config" at the bottom and paste THIS WHOLE FILE.
 #   6. Create. Wait until CPU idles in Graphs (~10 min: Hermes toolchain is ~6.6 GB).
-#   7. SSH in as hermes@<ip> and run:  bash ~/finish.sh
+#   7. SSH in as agentbox@<ip> and run:  bash ~/finish.sh
 #      (finish.sh is downloaded by this config; it asks for the 2-3 secrets
 #      that must NEVER live in cloud-init — user_data stays readable via the
 #      metadata service, so secrets are prompted on the box, never pasted here.)
 #
-# WHAT THIS DOES (mirrors ansible roles common+hermes+aoe deps; the
+# WHAT THIS DOES (mirrors ansible roles common/hermes/aoe; the
 # Terraform+Ansible path in this repo stays canonical — keep in sync):
-#   - hermes sudo user (key copied from root's Hetzner-injected keys),
+#   - agentbox sudo user (key copied from root's Hetzner-injected keys),
 #     key-only SSH, no password auth, root key-only (VNC break-glass kept)
 #   - base packages, 2 GB swap, UFW deny-incoming, fail2ban,
 #     unattended security upgrades, tmux, Docker, Tailscale (installed, NOT joined)
-#   - Hermes Agent installed as hermes (--skip-setup; model/auth next in finish.sh)
+#   - Hermes Agent installed as agentbox (--skip-setup; model/auth next in finish.sh)
 #   - MOTD + ~/FINISH-HERE.txt pointing at finish.sh
 ssh_pwauth: false
 
 users:
-  - name: hermes
+  - name: agentbox
     groups: sudo
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
@@ -57,12 +57,12 @@ write_files:
     permissions: "0644"
 
 runcmd:
-  # SSH keys land on root via the console selection — copy to hermes.
-  - mkdir -p /home/hermes/.ssh
-  - cp /root/.ssh/authorized_keys /home/hermes/.ssh/authorized_keys
-  - chown -R hermes:hermes /home/hermes/.ssh
-  - chmod 700 /home/hermes/.ssh
-  - chmod 600 /home/hermes/.ssh/authorized_keys
+  # SSH keys land on root via the console selection — copy to the sudo user.
+  - mkdir -p /home/agentbox/.ssh
+  - cp /root/.ssh/authorized_keys /home/agentbox/.ssh/authorized_keys
+  - chown -R agentbox:agentbox /home/agentbox/.ssh
+  - chmod 700 /home/agentbox/.ssh
+  - chmod 600 /home/agentbox/.ssh/authorized_keys
   # Key-only SSH; root stays key-only so the VNC console still works.
   - sed -i -E 's/^#?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
   - sed -i -E 's/^#?PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
@@ -82,13 +82,13 @@ runcmd:
   - systemctl enable --now fail2ban
   - systemctl enable --now unattended-upgrades
   - systemctl enable --now docker
-  - usermod -aG docker hermes
+  - usermod -aG docker agentbox
   # Tailscale: installed, NOT joined (auth key is a secret — finish.sh does it).
   - curl -fsSL https://tailscale.com/install.sh | sh
   - systemctl enable --now tailscaled
-  # Hermes Agent as hermes (own toolchain in ~/.hermes; no system python touched).
-  - sudo -u hermes bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup'
+  # Hermes Agent as agentbox (its own toolchain lands under that user; no system python touched).
+  - sudo -u agentbox bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup'
   # finish.sh + pointer (finish.sh lives in this repo; downloaded, never piped blind).
-  - sudo -u hermes bash -c 'curl -fsSL https://raw.githubusercontent.com/aryaminus/remote-agent-kit/main/scripts/finish.sh -o ~/finish.sh && chmod +x ~/finish.sh'
-  - cp /etc/motd /home/hermes/FINISH-HERE.txt
-  - chown hermes:hermes /home/hermes/FINISH-HERE.txt
+  - sudo -u agentbox bash -c 'curl -fsSL https://raw.githubusercontent.com/aryaminus/remote-agent-kit/main/scripts/finish.sh -o ~/finish.sh && chmod +x ~/finish.sh'
+  - cp /etc/motd /home/agentbox/FINISH-HERE.txt
+  - chown agentbox:agentbox /home/agentbox/FINISH-HERE.txt

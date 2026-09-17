@@ -54,9 +54,9 @@ current setup from this repo — never rots, contains zero secrets):
 https://raw.githubusercontent.com/aryaminus/remote-agent-kit/main/deploy/hetzner-cloud-init.yaml
 ```
 
-Create, wait for CPU to idle in Graphs (~10 min), then SSH in and run
-`bash ~/finish.sh` — it asks for the 2–3 secrets (Tailscale key, model,
-optional Telegram) and completes the box. Why no true one-click button?
+Create, wait for CPU to idle in Graphs (~10 min), then SSH in as
+`agentbox@<ip>` and run `bash ~/finish.sh` — it asks for the 2–3 secrets
+(Tailscale key, model, optional Telegram) and completes the box. Why no true one-click button?
 Hetzner only offers `console.hetzner.com/deploy/<app>` to registered Apps —
 this redirect + paste is the closest the platform allows, and it's honest
 about the one manual step (secrets can't live in cloud-init: user-data stays
