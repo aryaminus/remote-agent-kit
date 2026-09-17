@@ -126,7 +126,7 @@ your logins):**
 | `codex` | ChatGPT device login — then note the **free-tier usage cap** (Plus boundary is real; `codex exec` reports it plainly) |
 | `opencode` | Any OpenRouter key (`OPENROUTER_API_KEY` in `.env` → server env, no prompt). Default Zen auth accepted the key, but its default endpoint can't run tools on some keys — pass an explicit model: `opencode run --model openrouter/anthropic/claude-sonnet-4 "do X"` (proven live) |
 | `cmd` (CommandCode) | `COMMANDCODE_API_KEY` in `.env` → server env; one paste into `cmd login` writes `~/.commandcode/auth.json`, then `cmd -p "do X"` runs headless (proven live: `COMMANDCODE-OK`) |
-| Z.AI/GLM via `opencode` | `ZAI_API_KEY` in `.env` → server env + `opencode auth login` → **plain Z.AI** provider (NOT "Z.AI Coding Plan" — that's a separate subscription entry; a direct API key belongs in Z.AI, whose models are `zai/*`). Paste once (writes `~/.local/share/opencode/auth.json`, 0600). Then `opencode run --model zai/<model> "do X"`. **Account reality, verified live:** if the call fails with *"Insufficient balance or no resource package. Please recharge"* the wiring is proven correct and the Z.AI account itself needs funds — top up at the Z.AI console. (Same free-tier boundary pattern as Codex: auth works, the meter is the vendor's.) |
+| Z.AI/GLM via `opencode` | `ZAI_API_KEY` in `.env` → server env + `opencode auth login`. **Two entries = two billing tracks (verified live):** **"Z.AI"** → `zai/*` models bill the pay-as-you-go **API wallet** — an empty wallet answers *"Insufficient balance"* (wiring proven, wallet empty; top up at the Z.AI console). **"Z.AI Coding Plan"** → `zai-coding-plan/*` models bill your **GLM Coding Plan subscription** quota — if you hold the plan, this is your lane (proven live: `zai-coding-plan/glm-5.3` → `CP-OK`). Same key, different endpoint; both entries can coexist in `auth.json`. |
 | OpenCode Zen via `OPENCODE_API_KEY` | Zen key (`sk-…` from opencode.ai/auth) in `.env` → server env; ALSO stored once via `opencode auth login` → OpenCode Zen (verified: stored hash matches `.env`, and headless runs authenticate). **Two failure signatures, know them apart:** *"Invalid API key"* = wrong key in the Zen slot (we fixed one live — an OpenRouter key had been pasted there); *"No payment method …/billing"* = key is valid, the Zen workspace needs billing set up. |
 | Antigravity | not auto-installed (Google's script URL isn't pinnable); see their docs, then AoE detects it |
 
@@ -151,11 +151,15 @@ itself. Already logged in? It just says so and exits 0. Codes expire —
 rerun the script for a fresh one.
 
 **OpenCode Zen + free models (verified live):** Zen's own auth accepts a
-key, but its default endpoint may answer *"no tool-capable endpoint"* —
-always pass an explicit model (`--model openrouter/<free-id>`,
-`--model opencode/<id>`, or `--model zai/<id>` with `ZAI_API_KEY`).
-`ZAI_API_KEY` → server env + one `opencode auth login` → Z.AI paste —
-needs account funds ("Insufficient balance" = wiring proven, wallet empty).
+key, but its default endpoint may answer *"no payment method"* — pass an
+explicit model, or set your own default. To make a working model the
+default for bare `opencode run` (box-local, survives redeploys — Ansible
+doesn't manage this file):
+
+```bash
+# ~/.config/opencode/opencode.json — add the top-level key:
+{ "model": "zai-coding-plan/glm-5.3", … }
+```
 
 ## How it all fits together
 
