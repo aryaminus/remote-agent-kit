@@ -24,7 +24,11 @@ SRC="$HOME/controlkeel/controlkeel.db"
 [[ -f "$SRC" ]] || { echo "No local CK database at $SRC"; exit 2; }
 
 # Projects whose local controlkeel/ state should follow them to ~/work.
-PROJECTS="flood content idea sunim.com.np puzzle game socials-assistant flawsandscars era-eval msg-tuning latex-resume remote"
+# Project dirs whose local controlkeel/ state follows them to ~/work.
+# Override with YOUR folder names — the default is intentionally empty so
+# strangers replicate only the main store until they opt in:
+#   CK_REPLICA_PROJECTS="mysite myapp" ./scripts/ck-replica.sh
+PROJECTS="${CK_REPLICA_PROJECTS:-}"
 
 COUNTS_SQL="SELECT (SELECT COUNT(*) FROM sessions),(SELECT COUNT(*) FROM findings);"
 verify_one() { # label
