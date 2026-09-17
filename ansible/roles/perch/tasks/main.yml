@@ -5,7 +5,7 @@
 - name: Require STABLE dashboard secrets (same never-rotate law as the API key)
   ansible.builtin.fail:
     msg: "Set HERMES_DASHBOARD_BASIC_AUTH_PASSWORD/SECRET and HERMES_DASHBOARD_SESSION_TOKEN in .env (scripts/start.sh generates them). Rotating these per-deploy silently unpairs every phone."
-  when: lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_PASSWORD') | length == 0 or lookup('env', 'HERMES_DASHBOARD_SESSION_TOKEN') | length == 0
+  when: lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_PASSWORD') | length == 0 or lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_SECRET') | length == 0 or lookup('env', 'HERMES_DASHBOARD_SESSION_TOKEN') | length == 0
   no_log: true
 
 - name: Write dashboard basic-auth env (dashboard refuses non-loopback binds without it)
@@ -19,7 +19,7 @@
   loop:
     - { key: 'HERMES_DASHBOARD_BASIC_AUTH_USERNAME', value: "{{ lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_USERNAME') | default('admin', true) }}" }
     - { key: 'HERMES_DASHBOARD_BASIC_AUTH_PASSWORD', value: "{{ lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_PASSWORD') }}" }
-    - { key: 'HERMES_DASHBOARD_BASIC_AUTH_SECRET', value: "{{ lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_SECRET') | default('unset-change-me', true) }}" }
+    - { key: 'HERMES_DASHBOARD_BASIC_AUTH_SECRET', value: "{{ lookup('env', 'HERMES_DASHBOARD_BASIC_AUTH_SECRET') }}" }
   no_log: true
   notify: Restart dashboard
 
