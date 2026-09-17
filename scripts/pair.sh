@@ -15,12 +15,13 @@ echo "1) Make sure Tailscale is on this machine AND the phone (same tailnet)."
 # iOS REQUIRES the https MagicDNS name (ATS refuses cleartext to 100.x);
 # derive it from the local tailnet when possible.
 if command -v tailscale >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
-  HTTPS_URL="$(tailscale status --json 2>/dev/null | python3 -c 'import json,sys
+  HTTPS_URL="$(RK_AGENT_HOST="$(grep -m1 agent_hostname ansible/inventory/group_vars/all.yml 2>/dev/null | awk '{print $2}' || echo agentbox)" tailscale status --json 2>/dev/null | python3 -c 'import json,os,sys
 try:
   d = json.load(sys.stdin)
   suf = d.get("MagicDNSSuffix", "")
   names = [p.get("HostName", "") for p in d.get("Peer", {}).values()] + [d.get("Self", {}).get("HostName", "")]
-  host = next((n for n in names if n == "hermes"), "")
+  want = os.environ.get("RK_AGENT_HOST", "agentbox")
+  host = next((n for n in names if n == want), "")
   print(f"https://{host}.{suf}" if host and suf else "")
 except Exception:
   print("")' || true)"
