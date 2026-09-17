@@ -50,7 +50,7 @@ else
   printf 'Tailscale auth key (login.tailscale.com/admin/authkeys, tskey-auth-...): '
   IFS= read -rs TSKEY || TSKEY=""; echo
   [[ "$TSKEY" == tskey-auth-* ]] || { echo "That doesn't look like an auth key. Re-run when you have one."; exit 1; }
-  sudo tailscale up --authkey="$TSKEY" --hostname=hermes
+  sudo tailscale up --authkey="$TSKEY" --hostname=agentbox
   unset TSKEY
   TIP="$(tailscale ip -4 | head -1)"
   ok "joined tailnet ($TIP)"

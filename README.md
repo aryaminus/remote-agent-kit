@@ -24,7 +24,7 @@ Terraform (terraform/)          Ansible (ansible/)                You
 │ hcloud_firewall  │   ssh      │ common: user, UFW,     │ tailnet│ Perch app / PWA  │
 │ hcloud_server    ├───────────►│ fail2ban, swap         │◄──────►│ Telegram (opt)   │
 │ hcloud_ssh_key   │            │ tailscale: up (+serve) │ public │ Mac terminal SSH │
-└──────────────────┘            │ hermes: agent+gateway  │  22    └──────────────────┘
+└──────────────────┘            │ agent: gateway+dash  │  22    └──────────────────┘
                                 │ telegram: bot (opt-in) │
                                 │ perch: api 8642+--+dash│
                                 │ aoe: claude/codex/open-│
