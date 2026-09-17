@@ -180,6 +180,57 @@
   when: item.value | length > 0
   no_log: true
 
+# ControlKeel governance (ck_* MCP + attach companions) for every agent host.
+# Installs the CK CLI once (upstream release pinned by version var, idempotent),
+# then attaches each DETECTED CLI so governed loops work out of the box:
+# opencode gets .opencode/{skills,agents,commands,mcp.json}, claude/codex get
+# their native hook surfaces. Attach is per-REPO here (~/work): the box's
+# shared workspace every agent session starts from. Auth-first ordering:
+# attach never needs credentials — it wires files + local MCP only.
+- name: Check whether ControlKeel is installed
+  ansible.builtin.command: /home/{{ admin_username }}/.local/bin/controlkeel --version
+  register: ck_check
+  changed_when: false
+  failed_when: false
+  become_user: "{{ admin_username }}"
+  become: true
+
+- name: Install ControlKeel CLI (pinned release, idempotent)
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://github.com/aryaminus/controlkeel/releases/download/v{{ controlkeel_version }}/install.sh | sh
+    creates: /home/{{ admin_username }}/.local/bin/controlkeel
+    executable: /bin/bash
+  become_user: "{{ admin_username }}"
+  become: true
+  when: ck_check.rc != 0
+
+- name: Ensure the shared agent workspace exists
+  ansible.builtin.file:
+    path: /home/{{ admin_username }}/work
+    state: directory
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0755"
+
+- name: Attach every detected agent host to ControlKeel (per-repo, ~/work)
+  # create-if-missing per host; attach is idempotent (re-running = no-op).
+  # Guarded per binary so uninstalled/auth-less hosts are skipped silently.
+  ansible.builtin.shell:
+    cmd: |
+      export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"
+      cd ~/work
+      command -v {{ item.bin }} >/dev/null 2>&1 && controlkeel attach {{ item.host }} --scope project >/dev/null 2>&1 || true
+      {{ item.verify }}
+    creates: "{{ item.creates }}"
+    executable: /bin/bash
+  become_user: "{{ admin_username }}"
+  become: true
+  loop:
+    - { bin: 'opencode', host: 'opencode', verify: 'test -f ~/work/.opencode/mcp.json', creates: '/home/{{ admin_username }}/work/.opencode/mcp.json' }
+    - { bin: 'claude', host: 'claude-code', verify: 'true', creates: '/home/{{ admin_username }}/work/.claude.json' }
+    - { bin: 'codex', host: 'codex-cli', verify: 'true', creates: '/home/{{ admin_username }}/work/.codex/config.toml' }
+  when: install_agent_clis | default(true)
+
 - name: Verify AoE sees the installed CLIs
   ansible.builtin.command: /usr/local/bin/aoe agents
   become_user: "{{ admin_username }}"
