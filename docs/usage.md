@@ -82,6 +82,17 @@ aoe add --cmd cmd       # CommandCode
 aoe agents              # what's detected
 ```
 
+**Governed by default:** every host is attached to ControlKeel twice —
+per-repo (`~/work`: hooks, skills, MCP) and per-user (`~/.claude.json`,
+`~/.codex/`, `~/.config/opencode/`), so governance follows you into any
+project subdir. In opencode, press **Tab** and pick `controlkeel-operator`
+(it's listed from every directory now — it used to hide because the file
+only existed in `~/work/`); headless runs take
+`opencode run --agent controlkeel-operator "do X"`. No config key for a
+startup-default agent exists in this opencode version — Tab-select +
+`--agent` is the whole answer. (`cmd` has no CK host adapter; it runs
+plain, skills only.)
+
 **One-time auth per CLI (yours, browser-based — we install binaries, never
 your logins):**
 

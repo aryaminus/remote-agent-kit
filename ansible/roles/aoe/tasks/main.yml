@@ -231,6 +231,50 @@
     - { bin: 'codex', host: 'codex-cli', verify: 'true', creates: '/home/{{ admin_username }}/work/.codex/config.toml' }
   when: install_agent_clis | default(true)
 
+# User-scope attaches: per-repo files only govern ~/work. Agents run in
+# project SUBDIRS (~/work/puzzle/…) where those files are invisible — which
+# is exactly why Tab never showed the operator. These two make governance
+# follow the user everywhere:
+#   - claude-code / codex-cli --scope user → ~/.claude.json, ~/.codex/
+#   - opencode operator → ~/.config/opencode/agents/ (global agent dir;
+#     verified live: `opencode agent list` shows it from ANY cwd afterwards)
+# cmd (CommandCode) has no CK host adapter — skipped by design, documented.
+- name: Attach claude + codex at user scope (governance follows the user)
+  ansible.builtin.shell:
+    cmd: |
+      export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"
+      cd ~/work
+      command -v {{ item.bin }} >/dev/null 2>&1 && controlkeel attach {{ item.host }} --scope user >/dev/null 2>&1 || true
+    executable: /bin/bash
+  become_user: "{{ admin_username }}"
+  become: true
+  loop:
+    - { bin: 'claude', host: 'claude-code' }
+    - { bin: 'codex', host: 'codex-cli' }
+  when: install_agent_clis | default(true)
+
+- name: Check for the per-repo operator agent file
+  ansible.builtin.stat:
+    path: /home/{{ admin_username }}/work/.opencode/agents/controlkeel-operator.md
+  register: operator_agent_src
+  become_user: "{{ admin_username }}"
+  become: true
+  when: install_agent_clis | default(true)
+
+- name: Global opencode operator agent (visible from every directory)
+  ansible.builtin.copy:
+    src: /home/{{ admin_username }}/work/.opencode/agents/controlkeel-operator.md
+    dest: /home/{{ admin_username }}/.config/opencode/agents/controlkeel-operator.md
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0644"
+    remote_src: true
+  become_user: "{{ admin_username }}"
+  become: true
+  when:
+    - install_agent_clis | default(true)
+    - operator_agent_src.stat.exists | default(false)
+
 - name: Verify AoE sees the installed CLIs
   ansible.builtin.command: /usr/local/bin/aoe agents
   become_user: "{{ admin_username }}"
