@@ -8,34 +8,44 @@ set -euo pipefail
 
 HOST="$(terraform -chdir=terraform output -raw server_ipv4 2>/dev/null || true)"
 [[ -n "$HOST" ]] || { echo "No terraform output. Run: make apply"; exit 2; }
+INV_USER="$(grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $2}' || echo agentbox)"
 
 echo "remote-agent-kit · pair"
 echo
-echo "1) Make sure Tailscale is on this machine AND the phone (same tailnet)."
-# iOS REQUIRES the https MagicDNS name (ATS refuses cleartext to 100.x);
-# derive it from the local tailnet when possible.
-if command -v tailscale >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
-  HTTPS_URL="$(RK_AGENT_HOST="$(grep -m1 agent_hostname ansible/inventory/group_vars/all.yml 2>/dev/null | awk '{print $2}' || echo agentbox)" tailscale status --json 2>/dev/null | python3 -c 'import json,os,sys
-try:
-  d = json.load(sys.stdin)
-  suf = d.get("MagicDNSSuffix", "")
-  names = [p.get("HostName", "") for p in d.get("Peer", {}).values()] + [d.get("Self", {}).get("HostName", "")]
-  want = os.environ.get("RK_AGENT_HOST", "agentbox")
-  host = next((n for n in names if n == want), "")
-  print(f"https://{host}.{suf}" if host and suf else "")
-except Exception:
-  print("")' || true)"
-  [[ -n "$HTTPS_URL" ]] && echo "   iPhone address (HTTPS, required by iOS): $HTTPS_URL"
+# iOS REQUIRES the https MagicDNS name (ATS refuses cleartext to 100.x) —
+# perch-site's --tailscale mode prints the http://100.x address, which
+# ANDROID can use but iPHONES CANNOT. Derive the https serve URL and pass
+# it explicitly via --url (verified live: health 200 + QR carries the
+# https address + the API key for manual entry).
+RK_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+. "$RK_LIB_DIR/lib.sh"
+HTTPS_URL="${AGENT_URL:-$(rk_https_url)}"
+echo "1) Tailscale: a private network, not a session — nothing to keep running."
+echo "   - Mac terminal/SSH: NOT needed (plain public SSH, key-only)."
+echo "   - iPhone (Perch): REQUIRED, signed in, same account. No need to keep"
+echo "     it open — iOS wakes it per connection."
+if [[ -n "$HTTPS_URL" ]]; then
+  echo "   Phone address (HTTPS — required for iPhone): $HTTPS_URL"
+else
+  echo "   (No tailnet from THIS machine — pair from any device with Tailscale up.)"
 fi
+
 echo "2) SSH to the server and run the public pairing script there:"
 echo
-echo "     ssh $(grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $2}' || echo agentbox)@${HOST}"
+echo "     ssh ${INV_USER}@${HOST}"
 echo "     curl -fsSL https://aryaminus.github.io/perch-site/pair.sh -o pair.sh"
-echo "     bash pair.sh --tailscale"
+if [[ -n "$HTTPS_URL" ]]; then
+  echo "     bash pair.sh --url ${HTTPS_URL}    # iPhone + Android"
+  echo "     bash pair.sh --tailscale           # Android/dev only (http://100.x — iOS can't)"
+else
+  echo "     bash pair.sh --tailscale"
+fi
 echo
 echo "   (download-then-run, never piped — the same script the Perch app docs point to.)"
-echo "3) Scan the QR with Perch → 'Scan to connect'."
+echo "   It prints: the QR to scan, the address, and the API key for manual entry."
+echo "3) Scan the QR with Perch → 'Scan to connect' (or 'Enter details instead')."
 echo
 echo "Telegram test instead:"
 echo "  Open your bot in Telegram and send: hello"
-echo "  Debug: ssh $(grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $2}' || echo agentbox)@${HOST} 'journalctl --user -u hermes-gateway -n 100'"
+echo "  Debug: ssh ${INV_USER}@${HOST} 'journalctl --user -u hermes-gateway -n 100'"

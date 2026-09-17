@@ -8,7 +8,10 @@ set -euo pipefail
 # Server's tailnet IP from the LOCAL tailnet (hostname from inventory).
 # Learned the hard way: after lockdown, the public IP stops answering SSH,
 # and checks without a timeout hang for minutes instead of failing fast.
-WANT_HOST="$(grep -m1 agent_hostname ansible/inventory/group_vars/all.yml 2>/dev/null | awk '{print $2}' || echo agentbox)"
+RK_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+. "$RK_LIB_DIR/lib.sh"
+WANT_HOST="$(rk_agent_host)"
 # The canonical phone URL (https://<host>.<tail>.ts.net) is derived+printed
 # by pair.sh — one derivation site, not two.
 TIP="$(tailscale status 2>/dev/null | awk -v h="$WANT_HOST" '$2 == h {print $1; exit}' || true)"
