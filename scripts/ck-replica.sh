@@ -23,7 +23,6 @@ SSH="ssh -o BatchMode=yes -o ConnectTimeout=10 ${INV_USER}@${HOST}"
 SRC="$HOME/controlkeel/controlkeel.db"
 [[ -f "$SRC" ]] || { echo "No local CK database at $SRC"; exit 2; }
 
-# Projects whose local controlkeel/ state should follow them to ~/work.
 # Project dirs whose local controlkeel/ state follows them to ~/work.
 # Override with YOUR folder names — the default is intentionally empty so
 # strangers replicate only the main store until they opt in:

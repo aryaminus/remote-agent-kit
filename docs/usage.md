@@ -133,6 +133,23 @@ your logins):**
 Agent subscriptions are billed by their vendors — separate from the ~€9.99
 box and the free-tier Nous model your Hermes brain uses.
 
+**GitHub on the box (`gh`, one-time, per-user — by design):** git over SSH
+works out of the box, but `gh` API actions (PR comments/reviews, releases,
+issues) need a login, and GitHub's device flow can *only* be approved by
+the account owner in a browser — no script can or should do that for you.
+One command from your Mac runs the flow on the box and prints the code
+locally:
+
+```bash
+./scripts/gh-login.sh
+# 1. Open:  https://github.com/login/device
+# 2. Code:  XXXX-XXXX   (printed by the script, ~15-min expiry)
+```
+
+It waits for your approval, verifies the session, and cleans up after
+itself. Already logged in? It just says so and exits 0. Codes expire —
+rerun the script for a fresh one.
+
 **OpenCode Zen + free models (verified live):** Zen's own auth accepts a
 key, but its default endpoint may answer *"no tool-capable endpoint"* —
 always pass an explicit model (`--model openrouter/<free-id>`,

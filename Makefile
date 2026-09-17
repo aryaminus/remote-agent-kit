@@ -8,10 +8,10 @@ ANS := ansible-playbook -i ansible/inventory/hosts.yml ansible/playbook.yml
 # Box login user follows inventory (default agentbox) — one place to rename.
 INV_USER := $(shell grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $$2}' || echo agentbox)
 
-.PHONY: help init plan apply deploy pair pair-qr ssh doctor backup logs teardown check
+.PHONY: help init plan apply deploy pair pair-qr ssh doctor backup logs teardown check gh-login
 
 help: ## show every command
-	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+:.*?## ' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
 
 start: ## THE easy button: interactive zero-to-agent-box wizard
 	./scripts/start.sh
@@ -38,6 +38,8 @@ deploy: ## configure everything via Ansible (~10 min). Needs TAILSCALE_AUTHKEY.
 
 pair: ## print pairing info (Perch QR via server script + Telegram test)
 	./scripts/pair.sh
+gh-login: ## GitHub device login ON the box (one-time, prints code here)
+	./scripts/gh-login.sh
 pair-qr: ## fetch the pairing QR from the box and print it HERE — point phone at this screen
 	./scripts/pair.sh --qr
 perch-web: ## run the Perch web app on THIS Mac against your cloud box
