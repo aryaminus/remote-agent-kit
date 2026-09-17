@@ -37,6 +37,10 @@ hermes_dashboard_port: 9119
 # (no key stored). openrouter/anthropic need their key in .env.
 model_provider: nous
 
+# ControlKeel release pinned for the box install (bump deliberately after
+# verifying the new version's attach surfaces — see docs/usage.md).
+controlkeel_version: 0.4.16
+
 # Verified 2026-09-16 (githubcli-archive-keyring.gpg, upstream rotation possible —
 # re-fetch + update if the get_url checksum task ever fails).
 gh_keyring_sha256: 6084d5d7bd8e288441e0e94fc6275570895da18e6751f70f057485dc2d1a811b
