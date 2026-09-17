@@ -61,8 +61,22 @@ curl -H "Authorization: Bearer $API_SERVER_KEY" \
 
 ## 2. From your phone
 
+**Easiest — one command, QR on your screen:**
+
+```bash
+make pair-qr
+```
+
+It SSHes to the box, runs the public pairing script with the correct
+HTTPS address, and streams the QR into your terminal. Point the phone
+camera at your own screen. No camera / prefer typing? The same output
+shows the address + API key for *Enter details instead*.
+
+Manual path (same result): `make pair` prints the steps — SSH in, run
+perch-site's `pair.sh --url <https-address>`, scan.
+
 - **Perch native**: sessions, streaming, approvals, skills, cron — the polished
-  path (`pair.sh --tailscale` QR, one time). Needs the Tailscale app signed in.
+  path. Needs the Tailscale app signed in.
 - **Perch web PWA** (no store/TestFlight needed): same screens from this box
   — see "Perch web PWA" in `tailscale-perch.md`. Needs the Tailscale app only.
 - **Telegram** (OFF unless configured): message the bot; allow-listed to your

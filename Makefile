@@ -8,7 +8,7 @@ ANS := ansible-playbook -i ansible/inventory/hosts.yml ansible/playbook.yml
 # Box login user follows inventory (default agentbox) — one place to rename.
 INV_USER := $(shell grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $$2}' || echo agentbox)
 
-.PHONY: help init plan apply deploy pair ssh doctor backup logs teardown check
+.PHONY: help init plan apply deploy pair pair-qr ssh doctor backup logs teardown check
 
 help: ## show every command
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -38,6 +38,8 @@ deploy: ## configure everything via Ansible (~10 min). Needs TAILSCALE_AUTHKEY.
 
 pair: ## print pairing info (Perch QR via server script + Telegram test)
 	./scripts/pair.sh
+pair-qr: ## fetch the pairing QR from the box and print it HERE — point phone at this screen
+	./scripts/pair.sh --qr
 
 ssh: ## ssh to the box over Tailscale (no public port needed)
 	ssh $(INV_USER)@$$(terraform -chdir=terraform output -raw tailscale_hint 2>/dev/null || echo '<server-ip — see terraform output>')
