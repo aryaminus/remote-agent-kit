@@ -113,5 +113,25 @@
     proto: tcp
     from_ip: 100.64.0.0/10
 
+- name: Human landing page at /start (bare / is the API's 404 by design)
+  # A person opening https://<host>/ gets a page pointing at /health, the
+  # phone web app (:8443) and the pair flow — instead of a bare 404.
+  # Uses the agent_hostname var so renames need no edits here.
+  ansible.builtin.copy:
+    dest: /var/www/landing/
+    src: landing/
+    owner: www-data
+    group: www-data
+    mode: "0644"
+
+- name: Serve the landing page at /start
+  ansible.builtin.command: tailscale serve --bg --https=443 --set-path=/start /var/www/landing/
+  become_user: "{{ admin_username }}"
+  become: true
+  register: ts_serve_start
+  changed_when: "'Available within your tailnet' in ts_serve_start.stdout"
+  failed_when: false
+  when: "'/start' not in ts_serve_status.stdout"
+
 - name: Flush handlers so sshd restarts before we continue
   ansible.builtin.meta: flush_handlers
