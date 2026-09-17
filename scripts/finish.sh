@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# finish.sh — runs ON the server as the hermes user. Completes the one-click
+# finish.sh — runs ON the server as the admin user. Completes the one-click
 # path (deploy/hetzner-cloud-init.yaml): joins Tailscale, wires the model,
 # optionally sets up Telegram, starts the gateway + dashboard, and prints the
 # phone-pairing steps. Re-running resumes (completed steps are detected).

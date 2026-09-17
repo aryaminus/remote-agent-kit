@@ -6,7 +6,7 @@
     name: docker.io
     state: present
 
-- name: hermes user in the docker group
+- name: admin user in the docker group
   ansible.builtin.user:
     name: "{{ admin_username }}"
     groups: docker

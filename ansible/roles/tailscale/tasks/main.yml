@@ -80,7 +80,7 @@
     from_ip: 100.64.0.0/10
 
 - name: Allow tailscaled operator for serve config (one-time, least privilege)
-  # Lets the hermes user manage `tailscale serve` without root afterwards.
+  # Lets the admin user manage `tailscale serve` without root afterwards.
   ansible.builtin.command: tailscale set --operator={{ admin_username }}
   changed_when: false
 

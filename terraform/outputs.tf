@@ -15,5 +15,5 @@ output "firewall_id" {
 
 output "tailscale_hint" {
   description = "After deploy, `tailscale ip -4` on the server. make ssh uses it."
-  value       = "run: ssh hermes@$(terraform output -raw server_ipv4) 'tailscale ip -4'"
+  value       = "run: ssh ${var.admin_username}@$(terraform output -raw server_ipv4) 'tailscale ip -4'"
 }
