@@ -50,6 +50,8 @@ fi
 echo "remote-agent-kit · ck-replica (local → ${INV_USER}@${HOST})"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
+# Local project checkouts live beside each other; override when yours differ.
+DEV_ROOT="${CK_DEV_ROOT:-$HOME/Developer}"
 
 echo "→ snapshotting live main db (online backup, server keeps running)"
 sqlite3 "$SRC" ".backup '$STAGE/controlkeel.db'"
@@ -59,15 +61,15 @@ rsync -az "$STAGE/controlkeel.db" "$STAGE/project.json" "${INV_USER}@${HOST}:~/c
 echo "  ✓ main store transferred"
 
 for p in $PROJECTS; do
-  if [[ -f "/Users/aryaminus/Developer/$p/controlkeel/controlkeel.db" ]]; then
+  if [[ -f ""$DEV_ROOT/$p/controlkeel/controlkeel.db"" ]]; then
     mkdir -p "$STAGE/$p"
-    sqlite3 "/Users/aryaminus/Developer/$p/controlkeel/controlkeel.db" ".backup '$STAGE/$p/controlkeel.db'"
+    sqlite3 ""$DEV_ROOT/$p/controlkeel/controlkeel.db"" ".backup '$STAGE/$p/controlkeel.db'"
     # bin/ (machine shims), shm/locks (transient) stay behind; db + the rest go.
     rsync -az --exclude 'bin/' --exclude '*-shm' --exclude '*.lock' \
       "$STAGE/$p/controlkeel.db" "${INV_USER}@${HOST}:~/work/$p/controlkeel.db.tmp" \
     && $SSH "mkdir -p ~/work/$p/controlkeel && mv ~/work/$p/controlkeel.db.tmp ~/work/$p/controlkeel/controlkeel.db" \
     && rsync -az --exclude 'bin/' --exclude '*-shm' --exclude '*-wal' --exclude '*.lock' --exclude 'controlkeel.db*' \
-      "/Users/aryaminus/Developer/$p/controlkeel/" "${INV_USER}@${HOST}:~/work/$p/controlkeel/"
+      "$DEV_ROOT/$p/controlkeel/" "${INV_USER}@${HOST}:~/work/$p/controlkeel/"
     echo "  ✓ $p project state transferred"
   fi
 done

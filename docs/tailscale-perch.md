@@ -123,7 +123,9 @@ https://aryaminus.github.io/perch-site/<name> -o <name> && bash <name>`):
 * Web build users: `PERCH_WEB_ORIGIN` is for a web build you host
   YOURSELF elsewhere (exact origin → deploy writes
   `API_SERVER_CORS_ORIGINS`). The box-hosted PWA above is same-origin and
-  needs nothing. Native apps need nothing.
+  needs nothing. Native apps need nothing. Running the web build on your
+  own laptop instead (`make perch-web`) needs the laptop origin allowlisted —
+  the script tells you the exact line when it happens.
 ## Perch web PWA — no store, no TestFlight (verified live)
 
 When no native build is installable, the phone app ships as the exported

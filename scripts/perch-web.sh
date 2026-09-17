@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
-# perch-web.sh — run the Perch web app on THIS Mac, talking to your cloud box.
+# perch-web.sh — run the Perch web app on THIS machine, talking to your cloud box.
 #
-#   ./scripts/perch-web.sh              # build if needed, serve, print the URL
-#   ./scripts/perch-web.sh --port 8081  # pick the local port (default 8081)
-#   PERCH_REPO=~/Developer/nous ./scripts/perch-web.sh
+#   ./scripts/perch-web.sh --repo ~/src/perch        # build if needed, serve, print URL
+#   ./scripts/perch-web.sh --repo ~/src/perch --port 8081
+#   PERCH_REPO=~/src/perch ./scripts/perch-web.sh    # same via env
+#
+# PERCH_REPO must be a checkout containing the Expo app at apps/mobile
+# (the Perch client source). No default is assumed — this repo must work
+# for strangers, not just the machine it was written on.
 #
 # Nothing runs in the cloud for this: the gateway is already there. Two
 # local requirements, both checked below:
-#   1. This Mac must reach the tailnet (Tailscale app running — plain
+#   1. This machine must reach the tailnet (Tailscale app running — plain
 #      public SSH is NOT enough for a browser).
 #   2. The gateway must allow this page's origin (API_SERVER_CORS_ORIGINS
 #      on the box must include http://localhost:<port> — set once via
@@ -16,15 +20,21 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PORT=8081
+PERCH_REPO="${PERCH_REPO:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --port) PORT="$2"; shift 2 ;;
-    -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --repo) PERCH_REPO="$2"; shift 2 ;;
+    -h|--help) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 
-PERCH_REPO="${PERCH_REPO:-$HOME/Developer/nous}"
+if [[ -z "$PERCH_REPO" ]]; then
+  echo "Set the Perch checkout first: ./scripts/perch-web.sh --repo ~/src/perch"
+  echo "(or export PERCH_REPO=...). It must contain the Expo app at apps/mobile."
+  exit 2
+fi
 APP_DIR="$PERCH_REPO/apps/mobile"
 [[ -d "$APP_DIR" ]] || { echo "Perch checkout not found at $APP_DIR (set PERCH_REPO=...)"; exit 1; }
 command -v node >/dev/null 2>&1 || { echo "node required (https://nodejs.org)"; exit 1; }

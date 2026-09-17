@@ -59,9 +59,9 @@ curl -H "Authorization: Bearer $API_SERVER_KEY" \
      https://<box>.<your-tailnet>.ts.net/api/sessions/<id>/chat
 ```
 
-## 2. From your phone
+## 2. From your phone — native app, web PWA, or Mac web
 
-**Easiest — one command, QR on your screen:**
+**Easiest — one command, QR on your screen (native app path):**
 
 ```bash
 make pair-qr
@@ -74,6 +74,16 @@ shows the address + API key for *Enter details instead*.
 
 Manual path (same result): `make pair` prints the steps — SSH in, run
 perch-site's `pair.sh --url <https-address>`, scan.
+
+**Perch web on your laptop** (same screens, no phone involved):
+
+```bash
+PERCH_REPO=~/src/perch make perch-web     # or: ./scripts/perch-web.sh --repo ~/src/perch
+```
+
+Serves the web export at `http://localhost:8081` — open it, *Enter details
+instead*, same address + key as above. The script verifies the tailnet
+route and tells you if the box needs your localhost origin allowlisted.
 
 - **Perch native**: sessions, streaming, approvals, skills, cron — the polished
   path. Needs the Tailscale app signed in.
