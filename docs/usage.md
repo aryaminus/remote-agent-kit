@@ -201,4 +201,5 @@ make doctor     # 7-point health, logged
 make logs       # follow the gateway journal
 make backup     # pull the newest tarball off-box
 make pair       # phone pairing instructions + your HTTPS address
+make tunnel PORT=4300   # reach an app a devcontainer publishes on the box
 ```
