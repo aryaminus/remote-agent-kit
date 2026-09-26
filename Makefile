@@ -8,7 +8,7 @@ ANS := ansible-playbook -i ansible/inventory/hosts.yml ansible/playbook.yml
 # Box login user follows inventory (default agentbox) — one place to rename.
 INV_USER := $(shell grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $$2}' || echo agentbox)
 
-.PHONY: help init plan apply deploy pair pair-qr ssh doctor backup logs teardown check gh-login
+.PHONY: help init plan apply deploy pair pair-qr ssh tunnel doctor backup logs teardown check gh-login
 
 help: ## show every command
 	@grep -E '^[a-z-]+:.*?## ' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -47,6 +47,11 @@ perch-web: ## run the Perch web app on THIS Mac against your cloud box
 
 ssh: ## ssh to the box over Tailscale (no public port needed)
 	ssh $(INV_USER)@$$(terraform -chdir=terraform output -raw tailscale_hint 2>/dev/null || echo '<server-ip — see terraform output>')
+
+tunnel: ## forward a box port here (PORT=4300) — apps inside devcontainers; Ctrl-C to close
+	@test -n "$(PORT)" || (echo "usage: make tunnel PORT=<port>"; exit 1)
+	@echo "http://localhost:$(PORT) → box 127.0.0.1:$(PORT) (Ctrl-C to close)"
+	ssh -N -L $(PORT):127.0.0.1:$(PORT) $(INV_USER)@$$(terraform -chdir=terraform output -raw server_ipv4)
 
 doctor: ## 7-point health check against the live box
 	./scripts/doctor.sh

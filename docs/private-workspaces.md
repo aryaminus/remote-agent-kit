@@ -71,7 +71,7 @@ devcontainer exec --workspace-folder . bash
 * **Long jobs:** run them inside `tmux` so a dropped SSH session doesn't
   stop them.
 * **Browser access to an app inside a container:** forward the port over
-  SSH (`ssh -N -L 3000:127.0.0.1:3000 <box>`, then open `http://localhost:3000`
+  SSH (`make tunnel PORT=3000`, or `ssh -N -L 3000:127.0.0.1:3000 <box>`; then open `http://localhost:3000`
   on your machine — the app keeps the localhost origin its redirects expect) or
   reach it on the tailnet.
 * **Published container ports bypass UFW.** Docker writes its own iptables
