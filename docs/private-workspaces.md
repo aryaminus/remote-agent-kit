@@ -16,6 +16,10 @@ toolkit. This page covers doing that without leaking one into the other.
   holds the scrubbed objects. Move the old checkout out of `~/work`, clone
   fresh, check nothing was unique (`git log --branches --not --remotes`,
   `git status --ignored`), then delete the old one.
+* **Keep a read-mostly repo current:** list it in `auto_pull_repos` in
+  `hosts.yml` (e.g. `auto_pull_repos: [myrepo]`) and `make deploy` adds a
+  30-minute `git pull --ff-only` cron; local commits or conflicting edits make
+  it a no-op rather than a merge.
 * **Repo-local agent config travels with the clone** (a tracked
   `.claude/settings.json`, skills, `AGENTS.md`). Machine-local files —
   `.claude/settings.local.json`, MCP registrations (`claude mcp add …`) — do
