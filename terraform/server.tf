@@ -46,6 +46,6 @@ resource "hcloud_server" "agent" {
 
   labels = {
     managed-by = "remote-agent-kit"
-    agent      = "agentbox"
+    agent      = var.server_name
   }
 }

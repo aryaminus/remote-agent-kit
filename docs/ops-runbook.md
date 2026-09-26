@@ -22,6 +22,14 @@
   drift before optimizing.
 * Updates: snapshot → `hermes backup` → `hermes update` → `hermes doctor` →
   `systemctl --user restart hermes-gateway hermes-dashboard`.
+* Resize (more RAM/disk, e.g. cx33 → cx43 for devcontainer toolkits): snapshot
+  tagged `before-update` → set `server_type` in `terraform/terraform.tfvars` →
+  `make plan` must say *updated in-place* with **0 to destroy** → `make apply`
+  (the server shuts down, changes type, boots: a few minutes offline; SSH
+  sessions and tmux drop) → `make doctor`. User services come back only with
+  linger on (`loginctl show-user <user> -p Linger`). With `keep_disk = false`
+  (the provider default) the disk grows too, and a grown disk cannot shrink
+  back to the smaller type.
 * Rotate: Tailscale auth key (90d expiry reminds you), Telegram token on leak
   (`/revoke`), `API_SERVER_KEY` yearly (`make deploy` regenerates if blanked).
 
