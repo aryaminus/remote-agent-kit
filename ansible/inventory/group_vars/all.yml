@@ -16,6 +16,9 @@ enable_toolchain: true
 # devcontainer CLI (npm global) for repos/toolkits that ship .devcontainer/.
 # Heavy devcontainer toolkits often want 16 GB RAM — see docs/private-workspaces.md.
 install_devcontainer_cli: true
+# ~/work repos the box keeps fast-forwarded every 30 min (git pull --ff-only).
+# Empty by default; list repos you push from your laptop and only read here.
+auto_pull_repos: []
 # Herdr is the terminal-first alternative to AoE (no sandboxing/web UI —
 # see docs/alternatives.md). Install-only; default off.
 enable_herdr: false

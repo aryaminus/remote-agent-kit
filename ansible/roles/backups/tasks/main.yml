@@ -14,6 +14,14 @@
     state: present
   when: age_public_key | length > 0
 
+- name: Drop the pre-rename backup entry (boxes deployed before the agentbox rename carry both)
+  # Both entries fire at 03:00 and write the same tarball at once — a corrupt
+  # backup waiting to happen. Idempotent: absent stays absent.
+  ansible.builtin.cron:
+    name: "hermes nightly backup"
+    user: "{{ admin_username }}"
+    state: absent
+
 - name: Nightly backup cron (hermes backup + data tarball, retention enforced)
   ansible.builtin.cron:
     name: "agentbox nightly backup"

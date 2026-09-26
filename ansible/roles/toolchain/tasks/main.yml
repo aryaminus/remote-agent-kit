@@ -77,6 +77,17 @@
   ansible.builtin.debug:
     msg: "{{ toolchain_versions.results | map(attribute='stdout') | list }}"
 
+- name: Keep listed ~/work repos fast-forwarded (auto_pull_repos, default none)
+  # For repos you push from elsewhere and only read on the box. --ff-only
+  # never merges or rewrites: local commits or conflicting edits make the pull
+  # a no-op (fix by hand). Set per host, e.g. auto_pull_repos: [myrepo].
+  ansible.builtin.cron:
+    name: "auto-pull {{ item }}"
+    user: "{{ admin_username }}"
+    minute: "*/30"
+    job: "cd /home/{{ admin_username }}/work/{{ item }} && git pull --ff-only -q >/dev/null 2>&1"
+  loop: "{{ auto_pull_repos | default([]) }}"
+
 - name: Verify docker compose plugin
   ansible.builtin.command: docker compose version
   register: compose_version

@@ -15,6 +15,7 @@
 #   backup_dir, backup_retention_days, age_public_key
 #   perch_web_tarball ("../.." = skip PWA), tailscale_extra_args
 #   git_user_name (default agentbox); GIT_AUTHOR_EMAIL via .env
+#   auto_pull_repos .................. ~/work repos kept fast-forwarded, e.g. [myrepo]
 all:
   hosts:
     agentbox:
