@@ -57,6 +57,16 @@
     state: stopped
   failed_when: false
 
+- name: Enable ssh.service (with ssh.socket off, nothing else starts sshd at boot)
+  # Ubuntu 24.04 ships ssh.service disabled — socket activation starts it on
+  # demand. Disabling the socket without enabling the service leaves the box
+  # with NO sshd after its next reboot (found live after a resize: gateway and
+  # tailnet up, port 22 dead on every address).
+  ansible.builtin.systemd:
+    name: ssh
+    enabled: true
+    state: started
+
 - name: Bind sshd to tailnet IP + localhost only (or public, per operator choice)
   # lock_ssh_to_tailnet: true  → sshd answers ONLY on the tailnet (default,
   #   most conservative; requires Tailscale on every client).

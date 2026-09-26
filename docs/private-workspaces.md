@@ -36,8 +36,11 @@ those providers may see their material — often none.
   would not stop a container from mounting the directory. If a client's
   terms rule out every provider on the box, use a separate box.
 * **A client toolkit brings its own credentials.** Keep its key file at
-  `0600`, never in git, and check that the toolkit's containers use it rather
-  than the host's agent config:
+  `0600`, never in git, and **never in this kit's `.env`** — deploy copies
+  model keys into `~/.hermes/.env`, which every agent on the box inherits, so
+  a client's project-only key would end up serving all your other work (and a
+  set `ANTHROPIC_API_KEY` also turns off the Z.AI bridge). Check that the
+  toolkit's containers use their own key rather than the host's agent config:
   - before the first `devcontainer up`, read the toolkit's
     `.devcontainer/devcontainer.json` for bind mounts of `~/.claude`,
     `~/.codex`, or `~/.config/opencode` — the host's copies carry this box's
