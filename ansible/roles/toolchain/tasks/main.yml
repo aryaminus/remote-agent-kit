@@ -8,6 +8,12 @@
 #                per-project with `rustup component add`)
 #   pip/venv ... apt python3-pip + python3-venv (uv preferred; pip for legacy)
 #   compose .... docker-compose-v2 (docker.io alone has no `docker compose`)
+#   buildx ..... docker-buildx (docker.io alone falls back to the legacy
+#                builder, which rejects heredoc Dockerfiles; devcontainer
+#                builds need BuildKit)
+#   devcontainer @devcontainers/cli (npm global) — `devcontainer up` for
+#                toolkits that ship a .devcontainer/ (install_devcontainer_cli)
+#   unzip ...... toolkits and datasets arrive as zips (keeps symlinks)
 #   build-essential (linkers/headers for native builds; belt and braces)
 # Everything guarded by creates/binary checks — redeploys are no-ops.
 - name: Language runtime apt packages
@@ -17,6 +23,8 @@
       - python3-pip
       - python3-venv
       - docker-compose-v2
+      - docker-buildx
+      - unzip
     state: present
 
 - name: Install uv (Astral installer, user-level)
@@ -34,6 +42,15 @@
     executable: /bin/bash
   become_user: "{{ admin_username }}"
   become: true
+
+- name: Install the devcontainer CLI via npm global prefix
+  ansible.builtin.shell:
+    cmd: export PATH="$HOME/.local/bin:$PATH"; npm install -g @devcontainers/cli
+    creates: /home/{{ admin_username }}/.local/bin/devcontainer
+    executable: /bin/bash
+  become_user: "{{ admin_username }}"
+  become: true
+  when: install_devcontainer_cli | default(true)
 
 - name: Install Rust toolchain via rustup (minimal profile)
   ansible.builtin.shell:
@@ -63,4 +80,9 @@
 - name: Verify docker compose plugin
   ansible.builtin.command: docker compose version
   register: compose_version
+  changed_when: false
+
+- name: Verify docker buildx plugin (BuildKit for devcontainer builds)
+  ansible.builtin.command: docker buildx version
+  register: buildx_version
   changed_when: false
