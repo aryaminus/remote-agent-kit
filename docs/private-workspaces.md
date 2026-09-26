@@ -71,7 +71,13 @@ devcontainer exec --workspace-folder . bash
 * **Long jobs:** run them inside `tmux` so a dropped SSH session doesn't
   stop them.
 * **Browser access to an app inside a container:** forward the port over
-  SSH (`ssh -L 3000:localhost:3000 <box>`) or reach it on the tailnet.
+  SSH (`ssh -N -L 3000:127.0.0.1:3000 <box>`, then open `http://localhost:3000`
+  on your machine — the app keeps the localhost origin its redirects expect) or
+  reach it on the tailnet.
+* **Published container ports bypass UFW.** Docker writes its own iptables
+  rules, so a port a devcontainer publishes on `0.0.0.0` is not stopped by the
+  box's UFW. The Hetzner firewall (SSH from your IP only) is what keeps it off
+  the internet — never add an inbound rule for such a port; tunnel instead.
 * **Editor:** VS Code Remote-SSH to the box, then Dev Containers → "Reopen in
   Container" works against the box's Docker.
 
