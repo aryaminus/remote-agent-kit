@@ -40,6 +40,7 @@
 | Bot silent | `systemctl --user status hermes-gateway`; `TELEGRAM_ALLOWED_USERS` numeric? only one poller (stop foreground gateway)? |
 | `gateway install` did nothing | known upstream prompt bug — this repo already pipes `printf 'n\nY\n'`; re-run `--tags telegram` |
 | Dies on reboot | `loginctl show-user hermes -p Linger` must be `yes` |
+| SSH times out after a reboot, gateway fine | sshd never started: `ssh.socket` disabled, `ssh.service` not enabled (fixed in the tailscale role). Recover: ask the agent (Perch/Telegram) to run `sudo systemctl enable --now ssh`, or Hetzner rescue → `mount /dev/sda1 /mnt && chroot /mnt systemctl enable ssh.service` → reboot. Deploys from this version on keep it enabled |
 | Phone can't reach API | gateway bound to loopback? need `API_SERVER_HOST=0.0.0.0` + UFW tailnet rule; Tailscale up on both ends? |
 | Perch 401 after dashboard restart | token wasn't pinned — re-run `--tags perch`, re-pair |
 | Approval never arrives | normal when guardian auto-handles it; "no approval" ≠ "checked safe". Pending approvals time out closed (default 300 s). |
