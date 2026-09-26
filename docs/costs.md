@@ -25,6 +25,7 @@ Hetzner (and optionally your model provider), stop and re-read the docs.
 |---|---|---|
 | VPS **cx33** (4 vCPU / 8 GB / 80 GB, x86) | ~€9.99/mo | Default. Room for gateway + dashboard + 2–3 agents + browser tools. |
 | VPS **cx23** fallback (2 vCPU / 4 GB / 40 GB, x86) | ~€6.49/mo | Cheapest viable. Tight once browser/Playwright tasks run. |
+| VPS **cx43** (8 vCPU / 16 GB / 160 GB, x86) | check the console | For devcontainer toolkits that ask for 16 GB RAM; `server_type = "cx43"` resizes in place (plan: 1 to change, 0 to destroy) — `private-workspaces.md` §4. |
 | Snapshot | ~€0.012/GB/mo (~€0.50 for 40 GB) | Daily auto-snapshot recommended. |
 | Egress | 20 TB/mo free | Effectively unlimited for agents. |
 

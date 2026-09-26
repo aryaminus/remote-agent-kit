@@ -89,7 +89,8 @@ all services stay tailnet-only. Daily driver commands and the phone
 setup: `docs/usage.md`.
 
 Day to day: `make ssh`, `make logs`, `make backup`. Full lifecycle in
-`docs/ops-runbook.md`. Costs in `docs/costs.md` (~€9.99/mo VPS + $5–20/mo model
+`docs/ops-runbook.md`. Private repos, client toolkits (devcontainers), and
+keeping confidential work away from the box's agents: `docs/private-workspaces.md`. Costs in `docs/costs.md` (~€9.99/mo VPS + $5–20/mo model
 usage). Other hosts evaluated in `docs/alternatives.md` (exe.dev, box, Eve);
 agent-readable repo index in `docs/llms.txt`.
 

@@ -11,8 +11,11 @@ enable_hermes: true
 enable_telegram: true
 enable_perch_api: true
 enable_aoe: true
-# Full language runtimes agents invoke (uv/pnpm/rust/pip/compose).
+# Full language runtimes agents invoke (uv/pnpm/rust/pip/compose/buildx).
 enable_toolchain: true
+# devcontainer CLI (npm global) for repos/toolkits that ship .devcontainer/.
+# Heavy devcontainer toolkits often want 16 GB RAM — see docs/private-workspaces.md.
+install_devcontainer_cli: true
 # Herdr is the terminal-first alternative to AoE (no sandboxing/web UI —
 # see docs/alternatives.md). Install-only; default off.
 enable_herdr: false

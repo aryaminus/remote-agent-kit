@@ -19,6 +19,7 @@
 - docs/telegram-setup.md — BotFather + allow-list walkthrough (5 min)
 - docs/tailscale-perch.md — access matrix (SSH/terminal/Telegram/Perch), Tailscale $0 facts + alternatives, pairing, lockout recovery
 - docs/usage.md — THE daily driver's guide: terminal/phone/AoE workshop, per-CLI auth, architecture map, cheat sheet
+- docs/private-workspaces.md — private repos (auth, re-clone after a rewrite), confidential client workspaces outside ~/work, devcontainer toolkits (buildx, devcontainer CLI), sizing up to cx43
 
 ## Operate
 
