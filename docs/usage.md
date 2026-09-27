@@ -131,6 +131,27 @@ by deploy — no interactive pastes:**
 | `cmd` (CommandCode) | `COMMANDCODE_API_KEY` in `.env` → login shells; headless (proven: `CMD-OK`). |
 | `opencode` + CommandCode goat | **Automatic, catalog self-maintaining**: deploy fetches your live model catalog from CommandCode's OpenAI-compatible endpoint and writes TWO custom providers into `~/.config/opencode/opencode.json` (0600, key at rest like auth.json): `commandcode/*` (61 chat/completions models) + `commandcode-claude/*` (8 claude-* models via the Anthropic-Messages shape — the API requires it, verified). Re-run `make deploy` to refresh the catalog. **Plan boundaries, verified live:** `:free` models complete end-to-end (`GOAT-OK`); `MODEL_NOT_IN_PLAN` = tier gate (Pro+); *"insufficient credits"* = metered extra. Wiring is proven either way — the meter is the vendor's. |
 
+**One project on your own Claude subscription, the bridge for the rest.** The
+bridge lives in `~/.claude/settings.json`, so every `claude` session on the
+box goes to Z.AI. When one project should reach Anthropic instead (a client
+whose material may only go to the provider you already use elsewhere, or
+work that needs a specific model), give it its own config dir:
+
+```bash
+# ~/.local/bin/<project>-claude
+export CLAUDE_CONFIG_DIR="$HOME/.claude-<project>"      # no bridge settings here
+unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY
+cd ~/work/<project> && exec claude "$@"
+```
+
+First run: accept the folder-trust prompt, then `/login` with your Claude
+account (the URL opens on your laptop; paste the code back). The project's
+own `.claude/settings*.json` (hooks, permissions) still load; user-level
+state — MCP registrations, the ControlKeel hooks deploy writes — lives per
+config dir, so re-add what the project needs (`claude mcp add …` with the
+same `CLAUDE_CONFIG_DIR`). Check it: `CLAUDE_CONFIG_DIR=… claude -p hi`
+before login must say "Not logged in", not answer through Z.AI.
+
 Agent subscriptions are billed by their vendors — separate from the ~€9.99
 box and the free-tier Nous model your Hermes brain uses.
 
