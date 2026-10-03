@@ -17,9 +17,21 @@ Host box-x
 Host agent
     HostName <box-ip>
     User <box-user>
+    ForwardAgent yes   # optional — see "SSH agent on the box" below
     RemoteCommand tmux attach-session -t main 2>/dev/null || tmux new-session -A -s main
     RequestTTY yes
 ```
+
+**SSH agent on the box.** Without it, git on the box uses what the box
+itself holds (`make gh-login` credentials, any key in the box's `~/.ssh`).
+`ForwardAgent yes` additionally lends it your laptop's keys while you're
+connected — and lends them to anything running there, agents included, so
+leave it off if box-local credentials are enough. tmux panes outlive the login
+that forwarded the agent, so `make deploy` points them at a stable path
+(`~/.ssh/ssh_auth_sock`, refreshed by `~/.ssh/rc` on each forwarded login).
+Shells opened before that existed need one
+`export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock`. `ssh-add -l` on the box says
+"Error connecting to agent" when no forwarded login is live — expected.
 
 Then from any terminal (Warp included — see the workflows below):
 
@@ -223,4 +235,5 @@ make logs       # follow the gateway journal
 make backup     # pull the newest tarball off-box
 make pair       # phone pairing instructions + your HTTPS address
 make tunnel PORT=4300   # reach an app a devcontainer publishes on the box
+make allow-ip   # home IP changed (ssh times out, ping answers)? re-pin the edge rule
 ```
