@@ -145,7 +145,7 @@ the web path this kit documents.
 
 * Locked out? Hetzner console → web console (VNC) → `tailscale status`,
   revert `/etc/ssh/sshd_config` `ListenAddress` lines, `systemctl restart ssh`.
-  Home IP changed (edge rule pins SSH to your old IP)? Either update `my_ip`
-  in `terraform.tfvars` + `terraform apply`, or reach the box over the
+  Home IP changed (edge rule pins SSH to your old IP)? Either `make allow-ip`
+  (rewrites `my_ip`, applies only the firewall), or reach the box over the
   tailnet (`ssh hermes@<100.x>`) — this is why the tailnet path stays
   configured even when daily SSH goes direct.
