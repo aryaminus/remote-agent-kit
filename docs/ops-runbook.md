@@ -7,6 +7,7 @@
 | `make ssh` | shell on the box (over Tailscale) |
 | `make doctor` | 7 checks: SSH, Tailscale, /health, both services, UFW, disk |
 | `make logs` | follow `hermes-gateway` journal |
+| `make allow-ip` | home IP changed? re-pin the edge SSH rule (firewall-only apply) |
 | `aoe` (on server) | multi-agent TUI; `aoe add --cmd claude` for a new session |
 | `aoe serve` (on server) | web dashboard (binds localhost — reach via `tailscale serve`) |
 

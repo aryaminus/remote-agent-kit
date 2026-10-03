@@ -81,3 +81,39 @@
     name: unattended-upgrades
     enabled: true
     state: started
+
+- name: Stable SSH agent path — every forwarded login refreshes one symlink
+  # tmux panes outlive the login that started them, but a forwarded agent's
+  # socket (/tmp/ssh-*/agent.N) dies with that login. sshd runs ~/.ssh/rc on
+  # every login, so it repoints a fixed path at the newest live socket.
+  # rc must print nothing (scp/sftp break); with rc present sshd skips xauth,
+  # which this headless box never needs.
+  ansible.builtin.blockinfile:
+    path: /home/{{ admin_username }}/.ssh/rc
+    create: true
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0644"
+    marker: "# {mark} remote-agent-kit: ssh agent symlink"
+    block: |
+      if [ -S "$SSH_AUTH_SOCK" ]; then
+        ln -sf "$SSH_AUTH_SOCK" "$HOME/.ssh/ssh_auth_sock"
+      fi
+  tags: ssh_agent
+
+- name: tmux panes use the stable agent path, not the attaching login's socket
+  # tmux's default update-environment copies SSH_AUTH_SOCK from whichever
+  # client attaches — a path that is dead after that client disconnects.
+  # Without forwarding the symlink is absent or stale and ssh uses only the
+  # box's own keys, exactly as before.
+  ansible.builtin.blockinfile:
+    path: /home/{{ admin_username }}/.tmux.conf
+    create: true
+    owner: "{{ admin_username }}"
+    group: "{{ admin_username }}"
+    mode: "0644"
+    marker: "# {mark} remote-agent-kit: ssh agent"
+    block: |
+      set -g update-environment "DISPLAY KRB5CCNAME SSH_ASKPASS SSH_AGENT_PID SSH_CONNECTION WINDOWID XAUTHORITY"
+      set-environment -g SSH_AUTH_SOCK /home/{{ admin_username }}/.ssh/ssh_auth_sock
+  tags: ssh_agent
