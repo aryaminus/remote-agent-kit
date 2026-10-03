@@ -33,3 +33,9 @@ controlkeel/
 ansible/collections/*
 !ansible/collections/requirements.yml
 *.retry
+
+# ControlKeel managed (do not edit) - artifacts that must not be committed
+/controlkeel/
+/.controlkeel/
+/.agents/skills/
+# End ControlKeel managed
