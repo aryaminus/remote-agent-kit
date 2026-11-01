@@ -8,7 +8,7 @@ ANS := ansible-playbook -i ansible/inventory/hosts.yml ansible/playbook.yml
 # Box login user follows inventory (default agentbox) — one place to rename.
 INV_USER := $(shell grep -m1 ansible_user ansible/inventory/hosts.yml 2>/dev/null | awk '{print $$2}' || echo agentbox)
 
-.PHONY: help init plan apply deploy pair pair-qr ssh allow-ip tunnel doctor backup logs teardown check gh-login
+.PHONY: help init plan apply deploy pair pair-qr ssh unlock allow-ip tunnel doctor backup logs teardown check gh-login
 
 help: ## show every command
 	@grep -E '^[a-z-]+:.*?## ' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -47,6 +47,10 @@ perch-web: ## run the Perch web app on THIS Mac against your cloud box
 
 ssh: ## ssh to the box over Tailscale (no public port needed)
 	ssh $(INV_USER)@$$(terraform -chdir=terraform output -raw tailscale_hint 2>/dev/null || echo '<server-ip — see terraform output>')
+
+unlock: ## after a reboot: type the disk passphrase into the box's early-boot SSH (LUKS root)
+	ssh -o UserKnownHostsFile=~/.ssh/known_hosts.unlock -o StrictHostKeyChecking=accept-new \
+	  root@$$(terraform -chdir=terraform output -raw server_ipv4)
 
 allow-ip: ## home IP changed? re-pin the edge SSH rule to this machine's IP
 	./scripts/allow-ip.sh

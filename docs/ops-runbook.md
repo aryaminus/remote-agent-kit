@@ -51,3 +51,23 @@
 
 `make teardown` destroys the VPS (asks first). Snapshots and local
 `./backups/` survive. Delete the Tailscale machine entry afterwards.
+
+## Disk encryption (LUKS2 root) — every reboot needs an unlock
+
+Optional, opt-in. A box converted with `scripts/encrypt-root.sh` has its root
+filesystem on LUKS2 (`sda2` → `cryptroot`); `/boot` (`sda1`) is a small
+unencrypted partition. There is no TPM on Hetzner
+Cloud, so **after any reboot** (kernel update, Hetzner maintenance, `reset`)
+the box waits for the passphrase before anything — Tailscale, agents — starts.
+
+* **Unlock:** `make unlock` (early-boot SSH on the public IP, port 22, your Mac
+  key only — run `make allow-ip` first if your IP changed). It prompts for
+  the passphrase; the box then finishes booting in about a minute.
+* **Fallback:** Hetzner Console → server → `>_` console. The
+  `Please unlock disk cryptroot:` line gets buried under log output but is
+  still waiting — type the passphrase (by hand, US layout) and press Enter.
+* **Lost passphrase = data gone.** It lives only in the operator's password
+  manager. Recovery is a rebuild from an off-box backup.
+* **Containers and tmux sessions don't come back by themselves** after the unlock.
+* How it was converted (rescue + volume round-trip): `scripts/encrypt-root.sh`.
+* Verify: `lsblk -o NAME,FSTYPE,MOUNTPOINTS /dev/sda; sudo cryptsetup status cryptroot`.
